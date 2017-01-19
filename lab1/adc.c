@@ -14,6 +14,7 @@ int read_adc(unsigned int channel) {
 
 	//set the direction of the port to an input
 	DDRA &= ~(1<<channel);
+	DIDR0 = (1<<channel); //disable the digital part for power saving yo?
 
 	//select the channel in the MUX
 	ADMUX &= 0b11100000;

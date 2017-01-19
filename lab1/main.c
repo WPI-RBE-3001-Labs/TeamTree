@@ -9,8 +9,8 @@
 #include "main.h"
 #include "adc.h"
 
-int state = 0;
 unsigned int adcReading;
+volatile unsigned long currTime = 0;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -18,17 +18,20 @@ int main(int argv, char* argc[]) {
 	init_led();
 	init_timer0();
 	init_adc();
-	char welcome[] = "\n\ryo Dawg\n\r";
-	transmit(welcome, 11);
+	sei();
+	printf("Yo Dawg\n\r");
 
 	while (1) {
-		adcReading = read_adc(1);
+		adcReading = read_adc(2);
+		float voltage = adcReading / 1023.0 * 5000.0;
+		float angle = adcReading / 1023.0 * 180.0;
 		//adcReading = 6969;
 		char data[6];
 		data[4] = '\n';
 		data[5] = '\r';
-		adcString(adcReading,data);
-		transmit(data, 6);
+		adcString(adcReading, data);
+		//transmit(data, 6);
+		printf("%lu,Adc: %d,mV: %1.4f,Angle: %f\n\r",currTime ,adcReading, voltage, angle);
 		_delay_ms(200);
 	}
 
@@ -36,11 +39,7 @@ int main(int argv, char* argc[]) {
 }
 
 ISR(TIMER0_OVF_vect) {
-	//PORTBbits._P4 = 0;//state;
-	//state = !state;
-	//char data[] = "Hello!\r\n";
-	//transmit(data, 8);
-	//ADCSRA |= (1<<ADSC);
+currTime++;
 }
 
 void init_timer0() {
@@ -87,7 +86,7 @@ void recieve(char *outdata, unsigned int bytes_to_read) {
 void adcString(int adcVal, char* string) {
 	string[0] = adcVal / 1000 + 0x30; //1000th place
 	string[1] = (adcVal % 1000) / 100 + 0x30; //100th place
-	string[2] = ((adcVal % 1000)%100) / 10 + 0x30; //10th place
+	string[2] = ((adcVal % 1000) % 100) / 10 + 0x30; //10th place
 	string[3] = adcVal % 10 + 0x30;
 }
 
@@ -101,4 +100,7 @@ void button_led() {
 }
 
 void putCharDebug(char byteToSend) {
+	char byte[1];
+	byte[0] = byteToSend;
+	transmit(byte, 1);
 }
