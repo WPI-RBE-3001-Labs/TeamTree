@@ -12,6 +12,8 @@
 #define bps9600 119
 
 void button_led();
+void init_led();
+void init_timer0();
 void echo_serial();
 void init_serial(unsigned int baudrate);
 void transmit(char *data, unsigned int datalen);

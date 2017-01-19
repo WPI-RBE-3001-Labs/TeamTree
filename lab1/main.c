@@ -11,15 +11,41 @@
 int main(int argv, char* argc[]) {
 	initRBELib();
 	init_serial(bps115200);
+	init_led();
+	init_timer0();
+	sei();
 
 	while (1) {
-		char data[4];
+		/*char data[4];
 		recieve(data, 4);
 		transmit(data, 4);
-		_delay_ms(200);
+		_delay_ms(200);*/
 	}
 
 	return 0;
+}
+
+ISR(TIMER0_OVF_vect)
+{
+	PORTBbits._P4 ^= (1<<PORTBbits._P4);
+	char data[] = "ASS!";
+	transmit(data, 4);
+}
+
+
+void init_timer0()
+{
+    TIMSK0=(1<<TOIE0);
+    // set timer0 counter initial value to 0
+    TCNT0=0x00;
+    TIFR0 = 1<<TOV0;
+    // start timer0 with /1024 prescaler
+    TCCR0B = (1<<CS02) | (1<<CS00);
+}
+
+void init_led()
+{
+	DDRBbits._P4 = OUTPUT;
 }
 
 void init_serial(unsigned int baudrate_coded) {
