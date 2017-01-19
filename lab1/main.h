@@ -10,6 +10,8 @@
 
 #define bps115200 9
 #define bps9600 119
+#define false 0
+#define true 1
 
 void button_led();
 void init_led();
@@ -19,5 +21,7 @@ void init_serial(unsigned int baudrate);
 void transmit(char *data, unsigned int datalen);
 void recieve(char *outdata, unsigned int bytes_to_read);
 char receive_byte();
+
+void adcString(int adcVal, char* string);
 
 #endif /* MAIN_H_ */
