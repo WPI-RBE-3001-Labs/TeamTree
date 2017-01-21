@@ -18,6 +18,7 @@
 void button_led();
 void init_led();
 void init_timer0();
+void init_timer1();
 void init_timer2();
 void echo_serial();
 void init_serial(unsigned int baudrate);

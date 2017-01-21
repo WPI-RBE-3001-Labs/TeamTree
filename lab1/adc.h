@@ -12,4 +12,6 @@ void init_adc();
 int read_adc(unsigned int channel);
 void init_adc_trigger_timer();
 
+void init_adc_port(int channel);
+
 #endif /* ADC_H_ */
