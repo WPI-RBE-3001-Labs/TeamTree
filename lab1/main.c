@@ -8,47 +8,82 @@
 #include <RBELib/RBELib.h>
 #include "main.h"
 #include "adc.h"
-
+#include "Global.h"
 unsigned int adcReading;
-volatile unsigned long currTime = 0;
+volatile unsigned long currTime =0;
+
 
 int main(int argv, char* argc[]) {
 	initRBELib();
-	init_serial(bps115200);
+	init_serial(bps500000);
 	init_led();
 	init_timer0();
-	init_adc();
+	init_timer2();
+	init_adc_trigger_timer();
 	sei();
 	printf("Yo Dawg\n\r");
 
 	while (1) {
-		adcReading = read_adc(2);
-		float voltage = adcReading / 1023.0 * 5000.0;
-		float angle = adcReading / 1023.0 * 180.0;
-		//adcReading = 6969;
-		char data[6];
-		data[4] = '\n';
-		data[5] = '\r';
-		adcString(adcReading, data);
-		//transmit(data, 6);
-		printf("%lu,Adc: %d,mV: %1.4f,Angle: %f\n\r",currTime ,adcReading, voltage, angle);
-		_delay_ms(200);
+		/*adcReading = read_adc(2);
+		 float voltage = adcReading / 1023.0 * 5000.0;
+		 float angle = adcReading / 1023.0 * 180.0;
+		 int duty = map(adcReading,0,1023,0,255);
+		 //OCR0A = duty;
+		 printf("%f,Adc: %d,mV: %1.4f,Angle: %f, DUTY: %d\n\r", ((float)currTime)/1000.0, adcReading,
+		 voltage, angle,duty);
+		 _delay_ms(200);*/
 	}
 
 	return 0;
 }
 
 ISR(TIMER0_OVF_vect) {
-currTime++;
+	//PORTBbits._P4 = ~ PORTBbits._P4;
 }
 
+ISR(TIMER0_COMPA_vect) {
+	//PORTBbits._P4 = ~ PORTBbits._P4;
+}
+
+
+unsigned long getTime()
+{
+	return currTime;
+}
+
+//make PWM yo
+//using port PB3 - OC0A
 void init_timer0() {
-	TIMSK0 = (1 << TOIE0);
-	// set timer0 counter initial value to 0
-	TCNT0 = 0x00;
-	TIFR0 = 1 << TOV0;
-	// start timer0 with /1024 prescaler
-	TCCR0B = (1 << CS02) | (1 << CS00);
+
+	DDRBbits._P3 = OUTPUT; //need to enable output on this pin
+
+	TIMSK0 = (1 << TOIE0) | (1 << OCIE0A); //enable interrupts on overflow!
+
+	//enable fast-pwm, set the OC0A pin to be toggled on trigger
+	TCCR0A = (1 << COM0A1) | (1 << WGM00) | (1 << WGM01);
+
+	//select a 1024 for clock prescaler
+	TCCR0B = (1 << CS00) | (1 << CS02);
+
+	//set the value that compare register triggers at
+	OCR0A = 76;
+}
+
+//using this timer to keep track of time?
+void init_timer2() {
+	//don't do any waveform generation
+	TCCR2A = (1 << WGM21);  //setup for CTC mode
+	TCCR2B = (1 << CS22) | (1 << CS20); //prescaler;
+	OCR2A = 143;  //set the timer to count up
+	TIMSK2 = (1 << OCIE2A); //enable interrupt on timercnt = OCR2A
+}
+
+ISR(TIMER2_COMPA_vect) {
+	//TCNT2 = 0; //reset the timer2 count ;)
+	cli();
+	currTime++;
+	sei();
+	//PORTBbits._P4 = ~PORTBbits._P4;
 }
 
 void init_led() {
@@ -61,6 +96,7 @@ void init_serial(unsigned int baudrate_coded) {
 	UBRR0L = (unsigned char) baudrate_coded;
 	UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 	UCSR0C = (3 << UCSZ00);
+	//UCSR0A = (1 << U2X0);
 }
 
 void transmit(char *data, unsigned int datalen) {
@@ -103,4 +139,9 @@ void putCharDebug(char byteToSend) {
 	char byte[1];
 	byte[0] = byteToSend;
 	transmit(byte, 1);
+}
+
+int map(int val, int in_min, int in_max, int out_min, int out_max) {
+	return ((float) val) / ((float) (in_max - in_min))
+			* ((float) (out_max - out_min)) + out_min;
 }
