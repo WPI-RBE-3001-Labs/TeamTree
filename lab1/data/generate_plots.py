@@ -9,7 +9,7 @@ waveforms = [
     ('square_20.csv', 20, 'square'),
     ('square_125.csv', 125, 'square'),
     ('square_140.csv', 140, 'square'),
-    ('sin_20.csv', 20, 'sin'),
+    ('sin_20.csv', 20, 'sine'),
     ('sin_125.csv', 125, 'sine'),
     ('sin_140.csv', 140, 'sine'),
     ('triag_20.csv', 20, 'triangle'),
