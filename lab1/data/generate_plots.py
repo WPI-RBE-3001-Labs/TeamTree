@@ -37,4 +37,35 @@ for filename, freq, wave_type in waveforms:
 
     i += 1
 
+# Plots for generated waveforms
+pwms = [
+    ('100hz_25duty.csv', 100, 25),
+    ('100hz_70duty.csv', 100, 70),
+    ('20hz_25duty.csv', 20, 25),
+    ('20hz_70duty.csv', 20, 70),
+    ('1hz_25duty.csv', 1, 25),
+    ('1hz_70duty.csv', 1, 70),
+    ]
+
+for filename, freq, duty, in pwms:
+    csv_file = open(filename, 'rb')
+    data = csv.reader(csv_file)
+
+    output_state = []
+    pot_voltage = []
+    for row in data:
+        try:
+            output_state.append(float(row[2]))
+            pot_voltage.append(float(row[3]))
+        except ValueError:
+            pass
+
+    plt.figure(i)
+    plt.title(str(freq) + 'freq, ' + str(duty) + ' duty')
+    plt.plot(output_state)
+    plt.plot(pot_voltage)
+    plt.ylim((0, 5))
+
+    i += 1
+
 plt.show()
