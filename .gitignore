@@ -1,5 +1,6 @@
 RBELib
 rbelib
+*.swp
 RemoteSystemsTempFiles
 .metadata
 lab1/.settings
