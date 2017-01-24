@@ -34,6 +34,8 @@ for filename, freq, wave_type in waveforms:
     plt.figure(i)
     plt.title(wave_type + '_' + str(freq))
     plt.plot(times, sampled_voltages)
+    plt.xlabel('time')
+    plt.ylabel('voltage')
 
     i += 1
 
@@ -62,9 +64,20 @@ for filename, freq, duty, in pwms:
 
     plt.figure(i)
     plt.title(str(freq) + 'freq, ' + str(duty) + ' duty')
-    plt.plot(output_state)
-    plt.plot(pot_voltage)
+    line1, = plt.plot(output_state, label='output state')
+    line2, = plt.plot(pot_voltage, label='pot voltage')
     plt.ylim((0, 5))
+    plt.xlabel('time')
+
+    # Create a legend for the first line.
+    first_legend = plt.legend(handles=[line1], loc=4)
+
+    # Add the legend manually to the current Axes.
+    ax = plt.gca().add_artist(first_legend)
+
+    # Create another legend for the second line.
+    plt.legend(handles=[line2], loc=1)
+
 
     i += 1
 
