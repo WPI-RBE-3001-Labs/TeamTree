@@ -10,11 +10,11 @@ waveforms = [
     ('square_125.csv', 125, 'square'),
     ('square_140.csv', 140, 'square'),
     ('sin_20.csv', 20, 'sin'),
-    ('sin_125.csv', 125, 'sin'),
-    ('sin_140.csv', 140, 'sin'),
-    ('triag_20.csv', 20, 'triag'),
-    ('triag_125.csv', 125, 'triag'),
-    ('triag_140.csv', 140, 'triag'),
+    ('sin_125.csv', 125, 'sine'),
+    ('sin_140.csv', 140, 'sine'),
+    ('triag_20.csv', 20, 'triangle'),
+    ('triag_125.csv', 125, 'triangle'),
+    ('triag_140.csv', 140, 'triangle'),
     ]
 
 i = 0
@@ -32,10 +32,15 @@ for filename, freq, wave_type in waveforms:
             pass
 
     plt.figure(i)
-    plt.title(wave_type + '_' + str(freq))
+    name = wave_type + '_' + str(freq) + 'hz'
     plt.plot(times, sampled_voltages)
+
+    plt.title(name)
     plt.xlabel('time')
     plt.ylabel('voltage')
+
+    # save
+    plt.savefig(name + '.png')
 
     i += 1
 
@@ -63,7 +68,8 @@ for filename, freq, duty, in pwms:
             pass
 
     plt.figure(i)
-    plt.title(str(freq) + 'freq, ' + str(duty) + ' duty')
+    name = str(freq) + 'freq_' + str(duty) + 'duty'
+    plt.title(name)
     line1, = plt.plot(output_state, label='output state')
     line2, = plt.plot(pot_voltage, label='pot voltage')
     plt.ylim((0, 5))
@@ -78,7 +84,10 @@ for filename, freq, duty, in pwms:
     # Create another legend for the second line.
     plt.legend(handles=[line2], loc=1)
 
+    # save
+    plt.savefig(name + '.png')
 
     i += 1
 
-plt.show()
+# Comment this back in if you want to be spammed by all the plots
+#plt.show()
