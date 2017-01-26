@@ -20,36 +20,29 @@ int freq = 1;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
-	init_serial(bps500000);
+	init_serial(bps230400);
 	init_led();
-	init_timer0();
-	init_timer1();
-	init_timer2();
+	//init_timer0();
+	//init_timer1();
+	//init_timer2();
 	init_adc();
+	init_spi_master(bps230400);
+
 	//init_adc_trigger_timer();
 	sei();
 	printf("Yo Dawg\n\r");
 
-	DDRBbits._P2 = OUTPUT;
-	PORTBbits._P2 = 1;
-
-	DDRBbits._P0 = OUTPUT;
-	DDRBbits._P1 = OUTPUT;
-	DDRBbits._P2 = OUTPUT;
-
-	PORTBbits._P0 = 1;
-	PORTBbits._P1 = 1;
-	PORTBbits._P2 = 1;
-
 	while (1) {
-		/*adcReading = read_adc(2);
-		 float voltage = adcReading / 1023.0 * 5000.0;
-		 float angle = adcReading / 1023.0 * 180.0;
-		 int duty = map(adcReading,0,1023,0,255);
-		 //OCR0A = duty;
-		 printf("%f,Adc: %d,mV: %1.4f,Angle: %f, DUTY: %d\n\r", ((float)currTime)/1000.0, adcReading,
-		 voltage, angle,duty);
-		 _delay_ms(200);*/
+		adcReading = read_adc(2);
+		float voltage = adcReading / 1023.0 * 5000.0;
+		float angle = map(adcReading,HORIZONTALPOT,VERTICALPOT,0,90) - POTANGLEOFFSET;
+		//OCR0A = duty;
+		//printf("%f,Adc: %d,mV: %1.4f,Angle: %f\n\r",
+				//((float) currTime) / 1000.0, adcReading, voltage, angle);
+		set_dac(0,4095);
+		//spi_send_byte(0x03);
+		_delay_ms(200);
+
 		/*if (!PINBbits._P2 && !dank) {
 		 TCCR0B = (1 << CS00) | (1 << CS02);
 		 dank = true;
@@ -60,36 +53,6 @@ int main(int argv, char* argc[]) {
 		 TCCR0B = 0; //turn off the timer
 		 dank = false;
 		 }*/
-		adcReading = read_adc(2);
-		int val = map(adcReading, 0, 1023, 0, max_val);
-		int duty = map(adcReading, 0, 1023, 0, 100);
-		if (prev_val != val) {
-			OCR1A = val;
-			prev_val = val;
-
-		}
-		if (!PINBbits._P0) {
-			ICR1 = 36000; //set timer for 1Hz
-			TCNT1 = 0;
-			max_val = 36000;
-			freq = 1;
-
-		} else if (!PINBbits._P1) {
-			ICR1 = 36000 / 20; //set timer for 1Hz
-			max_val = 36000 / 20;
-			TCNT1 = 0;
-			freq = 20;
-		} else if (!PINBbits._P2) {
-			ICR1 = 36000 / 100; //set timer for 1Hz
-			max_val = 36000 / 100;
-			TCNT1 = 0;
-			freq = 100;
-		}
-		_delay_ms(25);
-
-		printf("%d,%d,%d,%1.2f\n\r", duty, freq,
-				PINDbits._P5, ((float)adcReading)/1023.0*5.0);
-
 	}
 
 	return 0;

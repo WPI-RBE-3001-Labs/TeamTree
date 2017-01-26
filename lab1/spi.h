@@ -12,6 +12,8 @@
 #define bps921600 4
 #define bps230400 5
 
-void init_spi(int speed);
+void init_spi_master(int speed);
+
+void spi_send_byte(char data);
 
 #endif /* SPI_H_ */

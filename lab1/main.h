@@ -11,9 +11,13 @@
 #define bps115200 9
 #define bps9600 119
 #define bps250000 4
-#define bps500000 4
+#define bps230400 4
 #define false 0
 #define true 1
+
+#define HORIZONTALPOT 237
+#define VERTICALPOT 600
+#define POTANGLEOFFSET 60
 
 void button_led();
 void init_led();
