@@ -18,10 +18,10 @@ void init_spi_master(int speed)
 	//MSB sent first, F_CPU/4 speed
 	//leading edge rising, latch on leading edge.
 	SPCR = (1<<SPE) | (1<<MSTR);
-	PORTBbits._P4 = 0; //set the CS pin low?
+	PORTBbits._P4 = 1; //set the CS pin low?
 }
 
-void spi_send_byte(char data)
+unsigned char spiTransceive(BYTE data)
 {
 	SPDR = data; //rip
 	while(!(SPSR & (1<<SPIF)))//make sure that shit isn't full

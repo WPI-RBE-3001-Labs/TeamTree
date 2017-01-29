@@ -11,5 +11,3 @@
 #define spi_bps921600 4
 #define spi_bps230400 5
 void init_spi_master(int speed);
-
-void spi_send_byte(char data);
