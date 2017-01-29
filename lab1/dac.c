@@ -23,6 +23,6 @@ void set_dac(unsigned char dac, int val) {
 	for(int i = 0; i < 3; i++)
 	{
 		spi_send_byte(data[i]);
-		printf("%d : %u\n\r",i,data[i]);
+//		printf("%d : %u\n\r",i,data[i]);
 	}
 }

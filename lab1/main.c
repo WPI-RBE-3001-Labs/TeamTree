@@ -9,6 +9,7 @@
 #include "main.h"
 #include "spi.h"
 #include "adc.h"
+#include "dac.h"
 #include "Global.h"
 unsigned int adcReading;
 volatile unsigned long currTime = 0;
@@ -23,8 +24,8 @@ int main(int argv, char* argc[]) {
 	initRBELib();
 	init_serial(uart_bps230400);
 	init_led();
-	//init_timer0();
-	//init_timer1();
+//	init_timer0();
+//	init_timer1();
 	init_timer2();
 	init_adc();
 	init_spi_master(spi_bps230400);
@@ -32,18 +33,17 @@ int main(int argv, char* argc[]) {
 	//init_adc_trigger_timer();
 	sei();
 
-	printf("time, adc, voltage, angle");
 	while (1) {
 //		adcReading = read_adc(2);
 //		double voltage = adcReading / 1023.0 * 5000.0;
 //		double angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90) - POTANGLEOFFSET;
 
 		//OCR0A = duty;
-		printf("%f, %d, %1.4f, %f\n\r", ((float) currTime) / 1000.0, adcReading, voltage, angle);
+//		printf("%f, %d, %1.4f, %f\n\r", ((float) currTime) / 1000.0, adcReading, voltage, angle);
 
-//		set_dac(0, 4095);
 
 //		spi_send_byte(0x03);
+		set_dac(0, 4095);
 		_delay_ms(200);
 
 		/*if (!PINBbits._P2 && !dank) {
