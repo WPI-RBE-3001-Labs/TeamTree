@@ -5,15 +5,15 @@
  *      Author: peter
  */
 
-#ifndef MAIN_H_
-#define MAIN_H_
+#pragma once
 
-#define bps115200 9
-#define bps9600 119
-#define bps250000 4
-#define bps230400 4
-#define false 0
-#define true 1
+#include <stdbool.h>
+
+#define uart_bps115200 9
+#define uart_bps9600 119
+#define uart_bps250000 4
+#define uart_bps230400 4
+#define uart_bps500000 4
 
 #define HORIZONTALPOT 237
 #define VERTICALPOT 600
@@ -32,5 +32,3 @@ char receive_byte();
 int map(int val, int in_min, int in_max, int out_min, int out_max);
 
 void adcString(int adcVal, char* string);
-
-#endif /* MAIN_H_ */

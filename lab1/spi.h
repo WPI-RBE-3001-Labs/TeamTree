@@ -5,15 +5,11 @@
  *      Author: nick
  */
 
-#ifndef SPI_H_
-#define SPI_H_
+#pragma once
 
-#define bps460800 0
-#define bps921600 4
-#define bps230400 5
-
+#define spi_bps460800 0
+#define spi_bps921600 4
+#define spi_bps230400 5
 void init_spi_master(int speed);
 
 void spi_send_byte(char data);
-
-#endif /* SPI_H_ */
