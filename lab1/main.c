@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "main.h"
 #include "spi.h"
+#include "pid.h"
 #include "adc.h"
 #include "Global.h"
 volatile unsigned long currTime = 0;
@@ -19,7 +20,7 @@ int max_val = 1;
 int prev_val = 1;
 int freq = 1;
 float base_setpoint;
-float arm_setpoint = 0;
+float arm_setpoint = -45;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -36,10 +37,12 @@ int main(int argv, char* argc[]) {
 	DDRBbits._P1 = INPUT;
 	DDRBbits._P2 = INPUT;
 	DDRBbits._P3 = INPUT;
+	DDRDbits._P0 = INPUT;
+	DDRDbits._P1 = INPUT;
 
 
 	//init_adc_trigger_timer();
-	set_motor(1,20);
+	set_motor(1,0);
 	set_motor(0,0);
 	sei();
 
@@ -48,13 +51,16 @@ int main(int argv, char* argc[]) {
 		unsigned int adcReading_arm = read_adc(3);
 		float angle_base = map(adcReading_base, HORIZONTALPOTBASE, VERTICALPOTBASE, 0, 90);
 		float angle_arm = map(adcReading_arm, HORIZONTALPOTARM, VERTICALPOTARM, -90, 0);
-		float current = get_current(0);
+		float current_base = get_current(0);
+		float current_arm = get_current(1);
 		if(pid_ready)
 		{
-			//set_motor(0,calculate_pid_output(angle_base, base_setpoint, 0));
+			float base_val = calculate_pid_output(angle_base, base_setpoint, 0);
+			set_motor(0,base_val);
+			set_motor(1,calculate_pid_output(angle_arm,arm_setpoint,1));
 			pid_ready = false;
 			//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
-			//set_motor(1,calculate_pid_output(angle_arm,arm_setpoint,1));
+			printf("%f ,%f ,%f ,%f\r\n",base_setpoint,angle_base,base_val,current_base);
 		}
 
 		if (!PINBbits._P0) {
@@ -68,6 +74,14 @@ int main(int argv, char* argc[]) {
 		}
 		else if (!PINBbits._P3) {
 			base_setpoint = 90;
+		}
+		if(!PINDbits._P0)
+		{
+			arm_setpoint = 0;
+		}
+		else
+		{
+			arm_setpoint = -90;
 		}
 
 
