@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "main.h"
 #include "spi.h"
+#include "pid.h"
 #include "adc.h"
 #include "Global.h"
 volatile unsigned long currTime = 0;
@@ -18,6 +19,8 @@ unsigned long tempTime = false;
 int max_val = 1;
 int prev_val = 1;
 int freq = 1;
+float base_setpoint;
+float arm_setpoint = -45;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -28,55 +31,60 @@ int main(int argv, char* argc[]) {
 	init_timer2();
 	init_adc();
 	init_spi_master(spi_bps230400);
+	init_pid();
 
 	DDRBbits._P0 = INPUT;
 	DDRBbits._P1 = INPUT;
 	DDRBbits._P2 = INPUT;
 	DDRBbits._P3 = INPUT;
+	DDRDbits._P0 = INPUT;
+	DDRDbits._P1 = INPUT;
 
 
 	//init_adc_trigger_timer();
+	set_motor(1,0);
+	set_motor(0,0);
 	sei();
 
-	const float kP = 0.030, kI = 0.003, kD = 0.0;
-
-	float last_adc = 0;
-	float integral = 0;
-	float int_cap = 20;
-	float setpoint = 0;
-
 	while (1) {
-		float current = get_current(0);
+		unsigned int adcReading_base = read_adc(2);
+		unsigned int adcReading_arm = read_adc(3);
+		float angle_base = map(adcReading_base, HORIZONTALPOTBASE, VERTICALPOTBASE, 0, 90);
+		float angle_arm = map(adcReading_arm, HORIZONTALPOTARM, VERTICALPOTARM, -90, 0);
+		float current_base = get_current(0);
+		float current_arm = get_current(1);
+		if(pid_ready)
+		{
+			float base_val = calculate_pid_output(angle_base, base_setpoint, 0);
+			set_motor(0,base_val);
+			set_motor(1,calculate_pid_output(angle_arm,arm_setpoint,1));
+			pid_ready = false;
+			//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
+			printf("%f ,%f ,%f ,%f\r\n",base_setpoint,angle_base,base_val,current_base);
+		}
 
 		if (!PINBbits._P0) {
-			setpoint = 0;
+			base_setpoint = 0;
 		}
 		else if (!PINBbits._P1) {
-			setpoint = 30;
+			base_setpoint = 30;
 		}
 		else if (!PINBbits._P2) {
-			setpoint = 60;
+			base_setpoint = 60;
 		}
 		else if (!PINBbits._P3) {
-			setpoint = 90;
+			base_setpoint = 90;
+		}
+		if(!PINDbits._P0)
+		{
+			arm_setpoint = 0;
+		}
+		else
+		{
+			arm_setpoint = -90;
 		}
 
-		if (pid_ready) {
-			pid_ready = false;
-			unsigned int adcReading = read_adc(2);
-			float angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90);
-			float error = angle - setpoint;
 
-			integral += error;
-			if (integral > int_cap) { integral = int_cap; }
-			if (integral < -int_cap) { integral = -int_cap; }
-
-			float derivative = angle - last_adc;
-			float pid_output = kP * error + kI * integral + kD * derivative;
-			printf("%f, %f, %f, %f\r\n", setpoint, angle, pid_output, current);
-			set_motor(0, pid_output);
-			last_adc = angle;
-		}
 	}
 
 	return 0;
@@ -105,8 +113,8 @@ void set_motor(int motor_id, float velocity) {
 		dac_chan2 = 1;
 	}
 	else if (motor_id == 1){
-		dac_chan1 = 2;
-		dac_chan2 = 3;
+		dac_chan1 = 3;
+		dac_chan2 = 2;
 	}
 
 	int dac_out = fmap(velocity, -1, 1, -4096, 4096);

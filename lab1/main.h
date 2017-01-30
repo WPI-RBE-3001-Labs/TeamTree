@@ -15,9 +15,13 @@
 #define uart_bps230400 4
 #define uart_bps500000 4
 
-#define HORIZONTALPOT 237
-#define VERTICALPOT 600
+#define HORIZONTALPOTBASE 237
+#define VERTICALPOTBASE 600
+#define HORIZONTALPOTARM 269
+#define VERTICALPOTARM 662
 #define CURRENT_BIAS 2.73
+
+
 
 void button_led();
 void init_led();
