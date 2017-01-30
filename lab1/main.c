@@ -6,6 +6,7 @@
  */
 
 #include <RBELib/RBELib.h>
+#include <stdlib.h>
 #include "main.h"
 #include "spi.h"
 #include "adc.h"
@@ -32,17 +33,19 @@ int main(int argv, char* argc[]) {
 	//init_adc_trigger_timer();
 	sei();
 
-	int dac_out = 0;
-	int dt = 0;
 	while (1) {
 		adcReading = read_adc(2);
-		double voltage = adcReading / 1023.0 * 5000.0;
-		double angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90) - POTANGLEOFFSET;
+//		double voltage = adcReading / 1023.0 * 5000.0;
+//		double angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90) - POTANGLEOFFSET;
 
 		//OCR0A = duty;
 //		printf("%f, %d, %1.4f, %f\n", ((float) currTime) / 1000.0, adcReading, voltage, angle);
 
-		set_motor(1, fmap(adcReading, 0, 1024, -1, 1));
+		float current = get_current(0);
+
+		printf("%f\r\n", current);
+
+		set_motor(0, fmap(adcReading, 0, 1024, -1, 1));
 
 		/*if (!PINBbits._P2 && !dank) {
 		 TCCR0B = (1 << CS00) | (1 << CS02);
@@ -59,11 +62,21 @@ int main(int argv, char* argc[]) {
 	return 0;
 }
 
+/** channel is 0 or 1 **/
+float get_current(int channel) {
+	int raw = read_adc(channel);
+	float current = fmap(raw, 0, 1024, 0, 5) - CURRENT_BIAS;
+	if (fabs(current) < 0.01) {
+		return 0.0;
+	}
+	return current;
+}
+
 /** motor_id is 0 for first link, and 1 for second link.
  * velocity is -1 to 1. Positive is RHR going outward along motor shaft */
 void set_motor(int motor_id, float velocity) {
-	unsigned char dac_chan1;
-	unsigned char dac_chan2;
+	unsigned char dac_chan1 = 0;
+	unsigned char dac_chan2 = 1;
 
 	if (motor_id == 0) {
 		dac_chan1 = 0;
@@ -75,7 +88,6 @@ void set_motor(int motor_id, float velocity) {
 	}
 
 	int dac_out = fmap(velocity, -1, 1, -4096, 4096);
-	printf("%i %i %i\r\n", dac_chan1, dac_chan2, dac_out);
 	if (dac_out >= 0) {
 		setDAC(dac_chan1, abs(dac_out));
 		setDAC(dac_chan2, 0);
