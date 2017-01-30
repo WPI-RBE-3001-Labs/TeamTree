@@ -42,7 +42,7 @@ int main(int argv, char* argc[]) {
 		//OCR0A = duty;
 //		printf("%f, %d, %1.4f, %f\n", ((float) currTime) / 1000.0, adcReading, voltage, angle);
 
-		set_motor(0, fmap(adcReading, 0, 1024, -1, 1));
+		set_motor(1, fmap(adcReading, 0, 1024, -1, 1));
 
 		/*if (!PINBbits._P2 && !dank) {
 		 TCCR0B = (1 << CS00) | (1 << CS02);
