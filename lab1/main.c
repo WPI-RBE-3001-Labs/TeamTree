@@ -42,16 +42,7 @@ int main(int argv, char* argc[]) {
 		//OCR0A = duty;
 //		printf("%f, %d, %1.4f, %f\n", ((float) currTime) / 1000.0, adcReading, voltage, angle);
 
-		if (dac_out >= 4095 - 200) {
-			dt = -199;
-		}
-		else if (dac_out <= 200) {
-			dt = 199;
-		}
-		dac_out += dt;
-		printf("%i %i\r\n", dac_out, 4095 - dac_out);
-		setDAC(0, dac_out);
-		setDAC(1, 4095 - dac_out);
+		set_motor(0, fmap(adcReading, 0, 1024, -1, 1));
 
 		/*if (!PINBbits._P2 && !dank) {
 		 TCCR0B = (1 << CS00) | (1 << CS02);
@@ -67,6 +58,35 @@ int main(int argv, char* argc[]) {
 
 	return 0;
 }
+
+/** motor_id is 0 for first link, and 1 for second link.
+ * velocity is -1 to 1. Positive is RHR going outward along motor shaft */
+void set_motor(int motor_id, float velocity) {
+	unsigned char dac_chan1;
+	unsigned char dac_chan2;
+
+	if (motor_id == 0) {
+		dac_chan1 = 0;
+		dac_chan2 = 1;
+	}
+	else if (motor_id == 1){
+		dac_chan1 = 2;
+		dac_chan2 = 3;
+	}
+
+	int dac_out = fmap(velocity, -1, 1, -4096, 4096);
+	printf("%i %i %i\r\n", dac_chan1, dac_chan2, dac_out);
+	if (dac_out >= 0) {
+		setDAC(dac_chan1, abs(dac_out));
+		setDAC(dac_chan2, 0);
+	}
+	else {
+		setDAC(dac_chan1, 0);
+		setDAC(dac_chan2, abs(dac_out));
+	}
+
+}
+
 
 ISR(TIMER0_OVF_vect) {
 	//PORTBbits._P4 = ~ PORTBbits._P4;
@@ -180,7 +200,11 @@ void putCharDebug(char byteToSend) {
 	transmit(byte, 1);
 }
 
+float fmap(float val, float in_min, float in_max, float out_min, float out_max) {
+	return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 int map(int val, int in_min, int in_max, int out_min, int out_max) {
-	return ((float) val) / ((float) (in_max - in_min))
+	return (float)(val - in_min) / ((float) (in_max - in_min))
 			* ((float) (out_max - out_min)) + out_min;
 }

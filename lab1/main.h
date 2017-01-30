@@ -29,6 +29,8 @@ void init_serial(unsigned int baudrate);
 void transmit(char *data, unsigned int datalen);
 void recieve(char *outdata, unsigned int bytes_to_read);
 char receive_byte();
+void set_motor(int motor_id, float velocity);
+float fmap(float val, float in_min, float in_max, float out_min, float out_max);
 int map(int val, int in_min, int in_max, int out_min, int out_max);
 
 void adcString(int adcVal, char* string);
