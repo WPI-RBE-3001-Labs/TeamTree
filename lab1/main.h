@@ -17,7 +17,6 @@
 
 #define HORIZONTALPOT 237
 #define VERTICALPOT 600
-#define POTANGLEOFFSET 60
 #define CURRENT_BIAS 2.73
 
 void button_led();

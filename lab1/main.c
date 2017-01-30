@@ -11,11 +11,10 @@
 #include "spi.h"
 #include "adc.h"
 #include "Global.h"
-unsigned int adcReading;
 volatile unsigned long currTime = 0;
+volatile bool pid_ready = 0;
 
-BOOL dank = false;
-unsigned long tempTime;
+unsigned long tempTime = false;
 int max_val = 1;
 int prev_val = 1;
 int freq = 1;
@@ -24,39 +23,60 @@ int main(int argv, char* argc[]) {
 	initRBELib();
 	init_serial(uart_bps230400);
 	init_led();
-//	init_timer0();
+	init_timer0();
 //	init_timer1();
 	init_timer2();
 	init_adc();
 	init_spi_master(spi_bps230400);
 
+	DDRBbits._P0 = INPUT;
+	DDRBbits._P1 = INPUT;
+	DDRBbits._P2 = INPUT;
+	DDRBbits._P3 = INPUT;
+
+
 	//init_adc_trigger_timer();
 	sei();
 
+	const float kP = 0.020, kI = 0.003, kD = 0.0;
+
+	float last_adc = 0;
+	float integral = 0;
+	float int_cap = 20;
+	float setpoint = 0;
+
 	while (1) {
-		adcReading = read_adc(2);
-//		double voltage = adcReading / 1023.0 * 5000.0;
-//		double angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90) - POTANGLEOFFSET;
-
-		//OCR0A = duty;
-//		printf("%f, %d, %1.4f, %f\n", ((float) currTime) / 1000.0, adcReading, voltage, angle);
-
 		float current = get_current(0);
 
-		printf("%f\r\n", current);
+		if (!PINBbits._P0) {
+			setpoint = 0;
+		}
+		else if (!PINBbits._P1) {
+			setpoint = 30;
+		}
+		else if (!PINBbits._P2) {
+			setpoint = 60;
+		}
+		else if (!PINBbits._P3) {
+			setpoint = 90;
+		}
 
-		set_motor(0, fmap(adcReading, 0, 1024, -1, 1));
+		if (pid_ready) {
+			pid_ready = false;
+			unsigned int adcReading = read_adc(2);
+			float angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90);
+			float error = angle - setpoint;
 
-		/*if (!PINBbits._P2 && !dank) {
-		 TCCR0B = (1 << CS00) | (1 << CS02);
-		 dank = true;
-		 tempTime = currTime;
-		 }
+			integral += error;
+			if (integral > int_cap) { integral = int_cap; }
+			if (integral < -int_cap) { integral = -int_cap; }
 
-		 if (dank && (currTime - tempTime > 1000)) {
-		 TCCR0B = 0; //turn off the timer
-		 dank = false;
-		 }*/
+			float derivative = angle - last_adc;
+			float pid_output = kP * error + kI * integral + kD * derivative;
+			printf("%f %f %f\r\n", setpoint, angle, pid_output, current);
+			set_motor(0, pid_output);
+			last_adc = angle;
+		}
 	}
 
 	return 0;
@@ -69,12 +89,14 @@ float get_current(int channel) {
 	if (fabs(current) < 0.01) {
 		return 0.0;
 	}
-	return current;
+	return -current;
 }
 
 /** motor_id is 0 for first link, and 1 for second link.
  * velocity is -1 to 1. Positive is RHR going outward along motor shaft */
 void set_motor(int motor_id, float velocity) {
+	if (velocity > 1) { velocity = 1;}
+	if (velocity < -1) { velocity = -1;}
 	unsigned char dac_chan1 = 0;
 	unsigned char dac_chan2 = 1;
 
@@ -89,23 +111,23 @@ void set_motor(int motor_id, float velocity) {
 
 	int dac_out = fmap(velocity, -1, 1, -4096, 4096);
 	if (dac_out >= 0) {
-		setDAC(dac_chan1, abs(dac_out));
-		setDAC(dac_chan2, 0);
-	}
-	else {
 		setDAC(dac_chan1, 0);
 		setDAC(dac_chan2, abs(dac_out));
+	}
+	else {
+		setDAC(dac_chan1, abs(dac_out));
+		setDAC(dac_chan2, 0);
 	}
 
 }
 
 
 ISR(TIMER0_OVF_vect) {
-	//PORTBbits._P4 = ~ PORTBbits._P4;
 }
 
 ISR(TIMER0_COMPA_vect) {
-	//PORTBbits._P4 = ~ PORTBbits._P4;
+	// PID
+	pid_ready = true;
 }
 
 unsigned long getTime() {
@@ -115,19 +137,16 @@ unsigned long getTime() {
 //make PWM yo
 //using port PB3 - OC0A
 void init_timer0() {
+	TIMSK0 = (1 << OCIE0A); //enable interrupts on overflow!
 
-	DDRBbits._P3 = OUTPUT; //need to enable output on this pin
-
-	TIMSK0 = (1 << TOIE0) | (1 << OCIE0A); //enable interrupts on overflow!
-
-	//enable fast-pwm, set the OC0A pin to be toggled on trigger
-	TCCR0A = (1 << COM0A1) | (1 << WGM00) | (1 << WGM01);
+	//enable CTC mode
+	TCCR0A = (1 << WGM01);
 
 	//select a 1024 for clock prescaler
-	//TCCR0B = (1 << CS00) | (1 << CS02);
+	TCCR0B = (1 << CS00) | (1 << CS02);
 
 	//set the value that compare register triggers at
-	OCR0A = 76;
+	OCR0A = 180;
 }
 
 //using this timer to keep track of time?
