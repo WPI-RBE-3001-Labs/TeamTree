@@ -38,7 +38,7 @@ int main(int argv, char* argc[]) {
 	//init_adc_trigger_timer();
 	sei();
 
-	const float kP = 0.020, kI = 0.003, kD = 0.0;
+	const float kP = 0.030, kI = 0.003, kD = 0.0;
 
 	float last_adc = 0;
 	float integral = 0;
@@ -73,7 +73,7 @@ int main(int argv, char* argc[]) {
 
 			float derivative = angle - last_adc;
 			float pid_output = kP * error + kI * integral + kD * derivative;
-			printf("%f %f %f\r\n", setpoint, angle, pid_output, current);
+			printf("%f, %f, %f, %f\r\n", setpoint, angle, pid_output, current);
 			set_motor(0, pid_output);
 			last_adc = angle;
 		}
