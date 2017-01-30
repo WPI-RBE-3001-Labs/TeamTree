@@ -18,6 +18,7 @@ unsigned long tempTime = false;
 int max_val = 1;
 int prev_val = 1;
 int freq = 1;
+float base_setpoint;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -28,6 +29,7 @@ int main(int argv, char* argc[]) {
 	init_timer2();
 	init_adc();
 	init_spi_master(spi_bps230400);
+	init_pid();
 
 	DDRBbits._P0 = INPUT;
 	DDRBbits._P1 = INPUT;
@@ -36,47 +38,34 @@ int main(int argv, char* argc[]) {
 
 
 	//init_adc_trigger_timer();
+	set_motor(1,0);
+	set_motor(0,0);
 	sei();
 
-	const float kP = 0.030, kI = 0.003, kD = 0.0;
-
-	float last_adc = 0;
-	float integral = 0;
-	float int_cap = 20;
-	float setpoint = 0;
-
 	while (1) {
+		unsigned int adcReading = read_adc(2);
+		float angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90);
 		float current = get_current(0);
+		if(pid_ready)
+		{
+			set_motor(0,calculate_pid_output(angle, base_setpoint, 0));
+			pid_ready = false;
+		}
 
 		if (!PINBbits._P0) {
-			setpoint = 0;
+			base_setpoint = 0;
 		}
 		else if (!PINBbits._P1) {
-			setpoint = 30;
+			base_setpoint = 30;
 		}
 		else if (!PINBbits._P2) {
-			setpoint = 60;
+			base_setpoint = 60;
 		}
 		else if (!PINBbits._P3) {
-			setpoint = 90;
+			base_setpoint = 90;
 		}
 
-		if (pid_ready) {
-			pid_ready = false;
-			unsigned int adcReading = read_adc(2);
-			float angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90);
-			float error = angle - setpoint;
 
-			integral += error;
-			if (integral > int_cap) { integral = int_cap; }
-			if (integral < -int_cap) { integral = -int_cap; }
-
-			float derivative = angle - last_adc;
-			float pid_output = kP * error + kI * integral + kD * derivative;
-			printf("%f, %f, %f, %f\r\n", setpoint, angle, pid_output, current);
-			set_motor(0, pid_output);
-			last_adc = angle;
-		}
 	}
 
 	return 0;
