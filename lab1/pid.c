@@ -18,7 +18,7 @@ void init_pid() {
 	base_pid.integral = 0;
 	base_pid.last_adc = 0;
 
-	arm_pid.kP = 0.01;
+	arm_pid.kP = 0.003;
 	arm_pid.kI = 0;
 	arm_pid.kD = 0;
 	arm_pid.int_cap = 20;

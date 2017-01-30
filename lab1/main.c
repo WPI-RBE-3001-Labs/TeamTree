@@ -19,6 +19,7 @@ int max_val = 1;
 int prev_val = 1;
 int freq = 1;
 float base_setpoint;
+float arm_setpoint = 0;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -38,18 +39,22 @@ int main(int argv, char* argc[]) {
 
 
 	//init_adc_trigger_timer();
-	set_motor(1,0);
+	set_motor(1,20);
 	set_motor(0,0);
 	sei();
 
 	while (1) {
-		unsigned int adcReading = read_adc(2);
-		float angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90);
+		unsigned int adcReading_base = read_adc(2);
+		unsigned int adcReading_arm = read_adc(3);
+		float angle_base = map(adcReading_base, HORIZONTALPOTBASE, VERTICALPOTBASE, 0, 90);
+		float angle_arm = map(adcReading_arm, HORIZONTALPOTARM, VERTICALPOTARM, -90, 0);
 		float current = get_current(0);
 		if(pid_ready)
 		{
-			set_motor(0,calculate_pid_output(angle, base_setpoint, 0));
+			//set_motor(0,calculate_pid_output(angle_base, base_setpoint, 0));
 			pid_ready = false;
+			//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
+			//set_motor(1,calculate_pid_output(angle_arm,arm_setpoint,1));
 		}
 
 		if (!PINBbits._P0) {
@@ -94,8 +99,8 @@ void set_motor(int motor_id, float velocity) {
 		dac_chan2 = 1;
 	}
 	else if (motor_id == 1){
-		dac_chan1 = 2;
-		dac_chan2 = 3;
+		dac_chan1 = 3;
+		dac_chan2 = 2;
 	}
 
 	int dac_out = fmap(velocity, -1, 1, -4096, 4096);
