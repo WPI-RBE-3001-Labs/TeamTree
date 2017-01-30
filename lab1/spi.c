@@ -18,6 +18,7 @@ void init_spi_master(int speed)
 	//MSB sent first, F_CPU/4 speed
 	//leading edge rising, latch on leading edge.
 	SPCR = (1<<SPE) | (1<<MSTR);
+	SPSR = (1<<SPI2X);
 	PORTBbits._P4 = 1; //set the CS pin low?
 }
 

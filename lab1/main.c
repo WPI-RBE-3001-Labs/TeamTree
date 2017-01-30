@@ -32,16 +32,26 @@ int main(int argv, char* argc[]) {
 	//init_adc_trigger_timer();
 	sei();
 
+	int dac_out = 0;
+	int dt = 0;
 	while (1) {
 		adcReading = read_adc(2);
 		double voltage = adcReading / 1023.0 * 5000.0;
 		double angle = map(adcReading, HORIZONTALPOT, VERTICALPOT, 0, 90) - POTANGLEOFFSET;
 
 		//OCR0A = duty;
-//		printf("%f, %d, %1.4f, %f\n\r", ((float) currTime) / 1000.0, adcReading, voltage, angle);
+//		printf("%f, %d, %1.4f, %f\n", ((float) currTime) / 1000.0, adcReading, voltage, angle);
 
-		setDAC(0, adcReading * 4);
-		_delay_ms(200);
+		if (dac_out >= 4095 - 200) {
+			dt = -199;
+		}
+		else if (dac_out <= 200) {
+			dt = 199;
+		}
+		dac_out += dt;
+		printf("%i %i\r\n", dac_out, 4095 - dac_out);
+		setDAC(0, dac_out);
+		setDAC(1, 4095 - dac_out);
 
 		/*if (!PINBbits._P2 && !dank) {
 		 TCCR0B = (1 << CS00) | (1 << CS02);
