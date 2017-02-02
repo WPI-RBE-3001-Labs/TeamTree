@@ -98,13 +98,13 @@ int main(int argv, char* argc[]) {
 	set_motor(1,0);
 	set_motor(0,0);
 	sei();
-
+	//printf("X,Y,Theta1,Theta2\r\n");
 	while (1) {
 
 		//pid_periodic();
 		float x,y;
 		calculate_forward_kinematics(get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),&x,&y);
-		//printf("x: %f   y: %f Theta2: %f Theta3 %f\r\n",x,y,get_arm_angle(LOWLINK),get_arm_angle(LOWLINK));
+		printf("%f, %f, %f, %f\r\n",x,y,get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK));
 
 		if(!PINBbits._P2)
 		{
@@ -132,8 +132,8 @@ int main(int argv, char* argc[]) {
 				snap_debounce = true;
 				snapshot[0][snapshot_counter] = get_arm_angle(LOWLINK);
 				snapshot[1][snapshot_counter] = get_arm_angle(HIGHLINK);
-				calculate_forward_kinematics(get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),&x,&y);
-				printf("recorded: LOW: %f HIGH: %f move# %d x: %f y: %f\r\n",snapshot[0][snapshot_counter],snapshot[1][snapshot_counter],snapshot_counter,x,y);
+				//calculate_forward_kinematics(get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),&x,&y);
+				//printf("recorded: LOW: %f HIGH: %f move# %d x: %f y: %f\r\n",snapshot[0][snapshot_counter],snapshot[1][snapshot_counter],snapshot_counter,x,y);
 				snapshot_counter++;
 				snapshot_time = currTime;
 				PORTDbits._P5 = 0;
@@ -174,8 +174,8 @@ int main(int argv, char* argc[]) {
 				base_setpoint = predefined[0][snapshot_cursor];
 				arm_setpoint = predefined[1][snapshot_cursor];
 				}
-				printf("MOVE# %d Done\r\n",snapshot_cursor - 1 >= 0 ? snapshot_cursor - 1: snapshot_counter);
-				printf("NEW ANGLES LOW: %f HIGH: %f\r\n",snapshot[0][snapshot_cursor],snapshot[1][snapshot_cursor]);
+				//printf("MOVE# %d Done\r\n",snapshot_cursor - 1 >= 0 ? snapshot_cursor - 1: snapshot_counter);
+				//printf("NEW ANGLES LOW: %f HIGH: %f\r\n",snapshot[0][snapshot_cursor],snapshot[1][snapshot_cursor]);
 				pid_done = false;
 				pid_settle_time = currTime;
 			}
@@ -231,7 +231,7 @@ void pid_periodic()
 		//printf("%f ,%f ,%f ,%f\r\n",base_setpoint,get_arm_angle(LOWLINK),base_val,current_base);
 		if(fabs(get_pid_error(LOWLINK)) < 4 && fabs(get_pid_error(HIGHLINK) < 2))
 		{
-			if(currTime - pid_settle_time > 25)
+			if(currTime - pid_settle_time > 100)
 			{
 				pid_done = true;
 			}
