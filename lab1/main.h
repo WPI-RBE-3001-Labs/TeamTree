@@ -23,10 +23,10 @@
 
 #define LOWLINK 0
 #define HIGHLINK 1
-#define LOWLINKMG 0.1
+#define LOWLINKMG 0.15
 
 
-
+void pid_persiodic_follow();
 void stop_motors();
 float get_arm_angle(char link);
 void pid_periodic();
