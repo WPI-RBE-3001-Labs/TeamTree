@@ -19,8 +19,8 @@ void init_pid() {
 	base_pid.last_adc = 0;
 
 	arm_pid.kP = 0.025;
-	arm_pid.kI = 0.003;
-	arm_pid.kD = 0.02;
+	arm_pid.kI = 0.002;
+	arm_pid.kD = 0.06;
 	arm_pid.int_cap = 20;
 	arm_pid.integral = 0;
 	arm_pid.last_adc = 0;
@@ -38,6 +38,7 @@ float calculate_pid_output(float sensor, float setpoint, char link) {
 	}
 
 	float error = sensor - setpoint;
+	pid_stuff->error = error;
 
 	pid_stuff->integral += error;
 	if (pid_stuff->integral > pid_stuff->int_cap) {
@@ -55,4 +56,19 @@ float calculate_pid_output(float sensor, float setpoint, char link) {
 	//printf("%f, %f, %f ,%f\r\n", setpoint, sensor, pid_output,error);
 	pid_stuff->last_adc = sensor;
 	return pid_output;
+}
+
+float get_pid_error(char link)
+{
+	PIDconst *pid_stuff;
+	if (link == 0) {
+		pid_stuff = &base_pid;
+	} else if (link == 1) {
+		pid_stuff = &arm_pid;
+	} else {
+		printf("stop being stupid, pid not happy");
+		return 0;
+	}
+
+	return pid_stuff->error;
 }
