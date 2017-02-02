@@ -22,6 +22,7 @@ typedef struct {
 }PIDconst;
 
 extern PIDconst base_pid, arm_pid;
+
 float get_pid_error(char link);
 void init_pid();
 float calculate_pid_output(float sensor, float setpoint, char link);

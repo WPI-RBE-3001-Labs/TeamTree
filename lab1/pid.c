@@ -8,19 +8,19 @@
 #include <RBELib/RBELib.h>
 #include "pid.h"
 
-PIDconst base_pid, arm_pid;
+PIDconst base_pid, arm_pid, base_pid_follow, arm_pid_follow;
 
 void init_pid() {
 	base_pid.kP = 0.03;
-	base_pid.kI = 0.003; //.003
+	base_pid.kI = 0.0044; //.003
 	base_pid.kD = 0;
 	base_pid.int_cap = 20;
 	base_pid.integral = 0;
 	base_pid.last_adc = 0;
 
 	arm_pid.kP = 0.025;
-	arm_pid.kI = 0.002;
-	arm_pid.kD = 0.06;
+	arm_pid.kI = 0.0045;
+	arm_pid.kD = 0.05;
 	arm_pid.int_cap = 20;
 	arm_pid.integral = 0;
 	arm_pid.last_adc = 0;
@@ -58,8 +58,7 @@ float calculate_pid_output(float sensor, float setpoint, char link) {
 	return pid_output;
 }
 
-float get_pid_error(char link)
-{
+float get_pid_error(char link) {
 	PIDconst *pid_stuff;
 	if (link == 0) {
 		pid_stuff = &base_pid;
