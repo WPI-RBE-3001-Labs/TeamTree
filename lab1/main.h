@@ -21,8 +21,15 @@
 #define VERTICALPOTARM 662
 #define CURRENT_BIAS 2.73
 
+#define LOWLINK 0
+#define HIGHLINK 1
+#define LOWLINKMG 0.1
 
 
+
+void stop_motors();
+float get_arm_angle(char link);
+void pid_periodic();
 void button_led();
 void init_led();
 void init_timer0();

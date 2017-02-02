@@ -12,6 +12,8 @@
 #include "pid.h"
 #include "adc.h"
 #include "Global.h"
+#include "kinematics.h"
+
 volatile unsigned long currTime = 0;
 volatile bool pid_ready = 0;
 
@@ -21,6 +23,16 @@ int prev_val = 1;
 int freq = 1;
 float base_setpoint;
 float arm_setpoint = -45;
+
+float snapshot[2][20];
+float predefined[2][4];
+int snapshot_counter = 0;
+int snapshot_cursor = 0;
+unsigned long snapshot_time = 0;
+unsigned long pid_settle_time = 0;
+bool pid_done = false;
+
+bool snap_debounce = false;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -38,8 +50,15 @@ int main(int argv, char* argc[]) {
 	DDRBbits._P2 = INPUT;
 	DDRBbits._P3 = INPUT;
 	DDRDbits._P0 = INPUT;
-	DDRDbits._P1 = INPUT;
+	DDRDbits._P5 = OUTPUT;
+	PORTDbits._P5 = 1;
 
+	predefined[0][0] = 0;
+	predefined[1][0] = 0;
+	predefined[0][1] = -90;
+	predefined[1][1] = 0;
+	predefined[0][2] = -45;
+	predefined[1][2] = -45;
 
 	//init_adc_trigger_timer();
 	set_motor(1,0);
@@ -47,23 +66,60 @@ int main(int argv, char* argc[]) {
 	sei();
 
 	while (1) {
-		unsigned int adcReading_base = read_adc(2);
-		unsigned int adcReading_arm = read_adc(3);
-		float angle_base = map(adcReading_base, HORIZONTALPOTBASE, VERTICALPOTBASE, 0, 90);
-		float angle_arm = map(adcReading_arm, HORIZONTALPOTARM, VERTICALPOTARM, -90, 0);
-		float current_base = get_current(0);
-		float current_arm = get_current(1);
-		if(pid_ready)
+
+		//pid_periodic();
+		float x,y;
+		calculate_forward_kinematics(get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),&x,&y);
+		//printf("x: %f   y: %f Theta2: %f Theta3 %f\r\n",x,y,get_arm_angle(LOWLINK),get_arm_angle(LOWLINK));
+
+
+		if(!PINDbits._P0) //snapshot cap mode
 		{
-			float base_val = calculate_pid_output(angle_base, base_setpoint, 0);
-			set_motor(0,base_val);
-			set_motor(1,calculate_pid_output(angle_arm,arm_setpoint,1));
-			pid_ready = false;
-			//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
-			printf("%f ,%f ,%f ,%f\r\n",base_setpoint,angle_base,base_val,current_base);
+			stop_motors();
+			if(!PINBbits._P3 && !snap_debounce && snapshot_counter < 20) //button has been pressed
+			{
+				snap_debounce = true;
+				snapshot[0][snapshot_counter] = get_arm_angle(LOWLINK);
+				snapshot[1][snapshot_counter] = get_arm_angle(HIGHLINK);
+				printf("recorded: LOW: %f HIGH: %f move# %d\r\n",snapshot[0][snapshot_counter],snapshot[1][snapshot_counter],snapshot_counter);
+				snapshot_counter++;
+				snapshot_time = currTime;
+				PORTDbits._P5 = 0;
+				if(snapshot_counter == 1)
+				{
+					base_setpoint = get_arm_angle(LOWLINK);
+					arm_setpoint = get_arm_angle(HIGHLINK);
+				}
+			}
+			else if(PINBbits._P3 && snap_debounce)
+			{
+				if(currTime - snapshot_time > 500) //give 1/2 sec chill time
+				{
+					snap_debounce = false;
+					PORTDbits._P5 = 1;
+				}
+			}
+		}
+		else
+		{
+			//printf("Theta2: %f Theta3: %f Set1: %f Set2: %f Cursor %d\r\n",get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),base_setpoint,arm_setpoint,snapshot_cursor);
+			if(pid_done)
+			{
+				snapshot_cursor = snapshot_cursor + 1 < snapshot_counter ? snapshot_cursor + 1 : 0;
+				base_setpoint = snapshot[0][snapshot_cursor];
+				arm_setpoint = snapshot[1][snapshot_cursor];
+				//base_setpoint = predefined[0][snapshot_cursor];
+				//arm_setpoint = predefined[1][snapshot_cursor];
+				printf("MOVE# %d Done\r\n",snapshot_cursor - 1 >= 0 ? snapshot_cursor - 1: snapshot_counter);
+				printf("NEW ANGLES LOW: %f HIGH: %f\r\n",snapshot[0][snapshot_cursor],snapshot[1][snapshot_cursor]);
+				pid_done = false;
+				pid_settle_time = currTime;
+			}
+			pid_periodic();
 		}
 
-		if (!PINBbits._P0) {
+
+		/*if (!PINBbits._P0) {
 			base_setpoint = 0;
 		}
 		else if (!PINBbits._P1) {
@@ -82,11 +138,61 @@ int main(int argv, char* argc[]) {
 		else
 		{
 			arm_setpoint = -90;
-		}
+		}*/
 
 
 	}
 
+	return 0;
+}
+
+void stop_motors()
+{
+	set_motor(0,0);
+	set_motor(1,0);
+}
+
+
+void pid_periodic()
+{
+	float current_base = get_current(0);
+	float current_arm = get_current(1);
+	if(pid_ready)
+	{
+		float base_val = calculate_pid_output(get_arm_angle(LOWLINK), base_setpoint, 0);
+		set_motor(0,base_val + sin((M_PI*get_arm_angle(LOWLINK))/180.0)*LOWLINKMG);
+		set_motor(1,calculate_pid_output(get_arm_angle(HIGHLINK),arm_setpoint,1));
+		pid_ready = false;
+		//printf("%f\r\n",get_arm_angle(HIGHLINK));
+		//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
+		//printf("%f ,%f ,%f ,%f\r\n",base_setpoint,get_arm_angle(LOWLINK),base_val,current_base);
+		if(fabs(get_pid_error(LOWLINK)) < 4 && fabs(get_pid_error(HIGHLINK) < 2))
+		{
+			if(currTime - pid_settle_time > 50)
+			{
+				pid_done = true;
+			}
+		}
+		else
+		{
+			pid_settle_time = currTime;
+			//printf("Not There LOW %f HIGH %f\r\n",get_pid_error(LOWLINK),get_pid_error(HIGHLINK));
+		}
+	}
+}
+
+float get_arm_angle(char link)
+{
+	if(link == LOWLINK)
+	{
+		unsigned int adcReading_base = read_adc(2);
+		return map(adcReading_base, HORIZONTALPOTBASE, VERTICALPOTBASE, 0, 90) - 90.0;
+	}
+	else if(link == HIGHLINK)
+	{
+		unsigned int adcReading_arm = read_adc(3);
+		return map(adcReading_arm, HORIZONTALPOTARM, VERTICALPOTARM, -90, 0);
+	}
 	return 0;
 }
 
