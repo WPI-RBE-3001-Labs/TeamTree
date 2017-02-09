@@ -83,5 +83,6 @@ plt.title("Three Point Triangle vs Many Point Triangle")
 plt.scatter(x1, y1, color='r', marker='x')
 plt.scatter(x2, y2, color='b', marker='o')
 plt.legend(['Three Points', 'Many Points'], loc=4)
+
 plt.savefig("B_part_6.png")
 plt.show()
