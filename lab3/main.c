@@ -11,6 +11,7 @@
 #include "spi.h"
 #include "pid.h"
 #include "adc.h"
+#include "LS7366R.h"
 #include "Global.h"
 #include "kinematics.h"
 
@@ -30,11 +31,13 @@ int snapshot_counter = 0;
 int snapshot_cursor = 0;
 unsigned long snapshot_time = 0;
 unsigned long pid_settle_time = 0;
+unsigned long encoder_time = 0;
 bool pid_done = false;
 
 bool snap_debounce = false;
 
 bool snapmode = true;
+bool print_encoder = false;
 char prev_state = 0;
 
 int run_mode = MANUAL;
@@ -44,11 +47,12 @@ int main(int argv, char* argc[]) {
 	init_serial(uart_bps230400);
 	init_led();
 	init_timer0();
-//	init_timer1();
+	//init_timer1();
 	init_timer2();
 	init_adc();
 	init_spi_master(spi_bps230400);
 	init_pid();
+	init_encoders();
 
 	DDRBbits._P0 = INPUT;
 	DDRBbits._P1 = INPUT;
@@ -96,24 +100,38 @@ int main(int argv, char* argc[]) {
 	}
 
 	//init_adc_trigger_timer();
-	set_motor(1, 0);
-	set_motor(0, 0);
+	//set_motor(1, 0);
+	//set_motor(0, 0);
 	sei();
 	//printf("X,Y,Theta1,Theta2\r\n");
+	EncoderCounts(0);
 	while (1) {
 
 		switch (run_mode) {
 
-		case MANUAL:
-		{
-
-			set_motor(0,0.19214);
-
+		case MANUAL: {
+			if (!PINBbits._P0) {
+				set_motor(0, 0);
+				reset_encoder_count(0);
+			} else if (!PINBbits._P1) {
+				set_motor(0, 0.19214);
+				reset_encoder_count(0);
+			} else if (!PINBbits._P2) {
+				set_motor(0, 0.19214 * 2);
+				reset_encoder_count(0);
+			} else if (!PINBbits._P3) {
+				set_motor(0, -0.19214);
+				reset_encoder_count(0);
+			}
+			if(currTime - encoder_time >= 10)
+			{
+				printf("%d\r\n",EncoderCounts(0));
+				encoder_time = currTime;
+			}
 			break;
 		}
 
-
-		/*case SNAPSHOT: {
+		case SNAPSHOT: {
 			//pid_periodic();
 			float x, y;
 			calculate_forward_kinematics(get_arm_angle(LOWLINK),
@@ -189,7 +207,7 @@ int main(int argv, char* argc[]) {
 			}
 			pid_periodic();
 			break;
-		}*/
+		}
 		}
 	}
 
@@ -282,10 +300,10 @@ void set_motor(int motor_id, float velocity) {
 
 }
 
-ISR(TIMER0_OVF_vect) {
+ISR( TIMER0_OVF_vect) {
 }
 
-ISR(TIMER0_COMPA_vect) {
+ISR( TIMER0_COMPA_vect) {
 	// PID
 	pid_ready = true;
 }
@@ -328,7 +346,7 @@ void init_timer1() {
 
 }
 
-ISR(TIMER2_COMPA_vect) {
+ISR( TIMER2_COMPA_vect) {
 //TCNT2 = 0; //reset the timer2 count ;)
 	cli();
 	currTime++;
