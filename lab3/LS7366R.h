@@ -81,3 +81,4 @@ int EncoderCounts(int channel);
 void init_encoders();
 void write_encoder_reg(int channel, unsigned char op, unsigned char data);
 void reset_encoder_count(int channel);
+float get_encoder_degrees(int channel);

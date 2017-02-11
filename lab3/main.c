@@ -8,12 +8,14 @@
 #include <RBELib/RBELib.h>
 #include <stdlib.h>
 #include "main.h"
+#include "accelerometer.h"
 #include "spi.h"
 #include "pid.h"
 #include "adc.h"
 #include "LS7366R.h"
 #include "Global.h"
 #include "kinematics.h"
+
 
 volatile unsigned long currTime = 0;
 volatile bool pid_ready = 0;
@@ -53,6 +55,7 @@ int main(int argv, char* argc[]) {
 	init_spi_master(spi_bps230400);
 	init_pid();
 	init_encoders();
+	init_accelerometer();
 
 	DDRBbits._P0 = INPUT;
 	DDRBbits._P1 = INPUT;
@@ -125,8 +128,9 @@ int main(int argv, char* argc[]) {
 			}
 			if(currTime - encoder_time >= 10)
 			{
-				printf("%d\r\n",EncoderCounts(0));
+				printf("%f\r\n",get_encoder_degrees(0));
 				encoder_time = currTime;
+				//get_accelerometer_axis(0);
 			}
 			break;
 		}

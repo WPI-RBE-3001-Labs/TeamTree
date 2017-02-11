@@ -98,3 +98,18 @@ void reset_encoder_count(int channel)
 	SS_EN0_HIGH;
 	SS_EN1_HIGH;
 }
+
+
+float get_encoder_degrees(int channel)
+{
+	float ticks = EncoderCounts(channel);
+	if(channel == 0)
+	{
+		return ticks/(48.0*172.0/360);
+	}
+	else
+	{
+		return ticks/10.0;
+	}
+	return 0;
+}
