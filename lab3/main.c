@@ -126,11 +126,13 @@ int main(int argv, char* argc[]) {
 				set_motor(0, -0.19214);
 				reset_encoder_count(0);
 			}
-			if(currTime - encoder_time >= 10)
+			if(currTime - encoder_time >= 30)
 			{
-				printf("%f\r\n",get_encoder_degrees(0));
+				//printf("%f\r\n",get_encoder_degrees(0));
 				encoder_time = currTime;
-				//get_accelerometer_axis(0);
+				//float gz = get_accelerometer_axis_g(2);
+				//printf("%f\r\n",gz);
+				get_accelerometer_axis(1);
 			}
 			break;
 		}
