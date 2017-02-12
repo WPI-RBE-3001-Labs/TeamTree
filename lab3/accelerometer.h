@@ -14,5 +14,5 @@
 
 int get_accelerometer_axis(unsigned char axis);
 void init_accelerometer();
-float get_accelerometer_vref();
+int get_accelerometer_vref();
 float get_accelerometer_axis_g(unsigned char channel);
