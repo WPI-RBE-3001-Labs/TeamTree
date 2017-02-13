@@ -50,9 +50,9 @@ float get_accelerometer_axis_g(unsigned char channel)
 {
 	float reading = get_accelerometer_axis(channel);
 	float vref = get_accelerometer_vref();
-	reading = (reading/4095.0)*3.3;
-	vref = (vref/4095.0)*3.3;
-	return (reading - vref)/.333;
+	//reading = (reading/4095.0)*3.3;
+	//vref = (vref/4095.0)*3.3;
+	return (reading - vref)*0.0022;
 }
 
 int get_accelerometer_vref()

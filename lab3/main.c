@@ -42,7 +42,7 @@ bool snapmode = true;
 bool print_encoder = false;
 char prev_state = 0;
 
-int run_mode = MANUAL;
+int run_mode = SAMPLESHIT;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -139,6 +139,35 @@ int main(int argv, char* argc[]) {
 			break;
 		}
 
+
+		case SAMPLESHIT:
+		{
+			if (!PINBbits._P0) {
+				base_setpoint = 0;
+				arm_setpoint = 0;
+			} else if (!PINBbits._P1) {
+				base_setpoint = -90;
+				arm_setpoint = 0;
+			} else if(!PINBbits._P2)
+			{
+				reset_encoder_count(0);
+			}
+			if(currTime - encoder_time >= 10)
+			{
+				encoder_time = currTime;
+				float encoder_deg = get_encoder_degrees(0);
+				float base_angle = get_arm_angle(LOWLINK);
+				float gx = get_accelerometer_axis_g(0);
+				float gy = get_accelerometer_axis_g(1);
+				float gz = get_accelerometer_axis_g(2);
+				printf("%f,%f,%f,%f,%f\r\n",base_angle,encoder_deg,gx,gy,gz);
+			}
+			pid_periodic();
+			break;
+		}
+
+
+
 		case SNAPSHOT: {
 			//pid_periodic();
 			float x, y;
@@ -228,8 +257,6 @@ void stop_motors() {
 }
 
 void pid_periodic() {
-	float current_base = get_current(0);
-	float current_arm = get_current(1);
 	if (pid_ready) {
 		float base_val = calculate_pid_output(get_arm_angle(LOWLINK),
 				base_setpoint, 0);

@@ -109,7 +109,7 @@ float get_encoder_degrees(int channel)
 	float ticks = EncoderCounts(channel);
 	if(channel == 0)
 	{
-		return ticks/(48.0*172.0/360);
+		return ticks/(48.0*172.0/(360.0*2.0));
 	}
 	else
 	{

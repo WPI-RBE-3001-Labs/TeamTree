@@ -16,9 +16,11 @@
 #define uart_bps500000 4
 
 #define HORIZONTALPOTBASE 237
-#define VERTICALPOTBASE 600
-#define HORIZONTALPOTARM 269
-#define VERTICALPOTARM 662
+#define VERTICALPOTBASE 615
+
+#define HORIZONTALPOTARM 246
+#define VERTICALPOTARM 632
+
 #define CURRENT_BIAS 2.73
 
 #define LOWLINK 0
@@ -28,7 +30,7 @@
 
 #define SNAPSHOT 1
 #define MANUAL 2
-
+#define SAMPLESHIT 3
 
 void pid_persiodic_follow();
 void stop_motors();
