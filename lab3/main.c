@@ -52,7 +52,7 @@ int main(int argv, char* argc[]) {
 	//init_timer1();
 	init_timer2();
 	init_adc();
-	init_spi_master(spi_bps230400);
+	init_spi_master(spi_bps2304000);
 	init_pid();
 	init_encoders();
 	init_accelerometer();
@@ -126,13 +126,15 @@ int main(int argv, char* argc[]) {
 				set_motor(0, -0.19214);
 				reset_encoder_count(0);
 			}
-			if(currTime - encoder_time >= 30)
+			if(currTime - encoder_time >= 100)
 			{
 				//printf("%f\r\n",get_encoder_degrees(0));
 				encoder_time = currTime;
-				//float gz = get_accelerometer_axis_g(2);
-				//printf("%f\r\n",gz);
-				get_accelerometer_axis(1);
+				float gz = get_accelerometer_axis_g(2);
+				printf("%f\r\n",gz);
+				//get_accelerometer_axis(1);
+				//get_accelerometer_vref();
+
 			}
 			break;
 		}

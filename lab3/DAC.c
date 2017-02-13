@@ -14,8 +14,10 @@
  */
 
 #include "RBELib/RBELib.h"
+#include "spi.h"
 
 void setDAC(int DACn, int SPIval){
+	init_spi_master(spi_bps2304000);
   DAC_SS_ddr = OUTPUT;
 
   //We need to send out 3 "packages" for configuring the DAC

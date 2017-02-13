@@ -7,7 +7,8 @@
 #include <RBELib/RBELib.h>
 #include "main.h"
 #include "accelerometer.h"
-
+#include <stdlib.h>
+#include "spi.h"
 
 
 void init_accelerometer()
@@ -17,6 +18,8 @@ void init_accelerometer()
 
 int get_accelerometer_axis(unsigned char axis)
 {
+	init_spi_master(spi_bps288000); //slow the fucking spi down so it works
+	//with this shitty bi-directional spi hack.....
 	if(axis < 0 || axis > 2)
 	{
 		printf("RIP YOUR GRAVITY\r\n");
@@ -25,15 +28,21 @@ int get_accelerometer_axis(unsigned char axis)
 	unsigned char packet1,packet2;
 	packet1 = 0x06;
 	packet2 = (axis<<6);
-	printf("%X, %X     :  ",packet1,packet2);
+
 	ACC_SS_LOW;
 	spiTransceive(packet1); //expect to get shit back? (YES,nothing)
 
-	int reading = spiTransceive(packet2) << 8;
-	reading |= spiTransceive(0x00);
+	unsigned char H = (spiTransceive(packet2))&0x1f;
+	unsigned char L = spiTransceive(0x00);
+	char buffer[10];
+	char buffer1[10];
+	itoa (H,buffer,2);
+	itoa (L,buffer1,2);
+	//printf("%s, %s     :  ",buffer,buffer1);
 	ACC_SS_HIGH;
-	float mv = (reading/4096.0)*3.3;
-	printf("%d, %f\r\n",reading,mv);
+	int reading = (H<<8) | L;
+	float mv = (reading/4095.0)*3.3;
+	//printf("%d, %f\r\n",reading,mv);
 	return reading;
 }
 
@@ -41,25 +50,28 @@ float get_accelerometer_axis_g(unsigned char channel)
 {
 	float reading = get_accelerometer_axis(channel);
 	float vref = get_accelerometer_vref();
-	if (reading >= vref) {
-		return pow(reading - vref,0x3852); // positive g-force
-	} else {
-		return -pow(vref - reading,0x3852); // negative g-force
-	}
-	return 0;
+	reading = (reading/4095.0)*3.3;
+	vref = (vref/4095.0)*3.3;
+	return (reading - vref)/.333;
 }
 
 int get_accelerometer_vref()
 {
+	init_spi_master(spi_bps288000); //slow the fucking spi down so it works
+	//with this shitty bi-directional spi hack.....
 	ACC_SS_LOW;
-	unsigned char packet1 = 0x06;
-	unsigned char packet2 = (0x03<<6);
-	//printf("%X, %X     :  ",packet1,packet2);
-	spiTransceive(packet1);
-	int vref = spiTransceive(packet2) << 8;
-	vref |= spiTransceive(0x00);
+	unsigned char packet1,packet2;
+	packet1 = 0x06;
+	packet2 = (3<<6);
+
+	ACC_SS_LOW;
+	spiTransceive(packet1); //expect to get shit back? (YES,nothing)
+
+	unsigned char H = (spiTransceive(packet2))&0x1f;
+	unsigned char L = spiTransceive(0x00);
 	ACC_SS_HIGH;
-	float v = (vref/4096.0)*3.3;
+	int vref = (H<<8) | L;
+	float v = (vref/4095.0)*3.3;
 	//printf("%d, %f\r\n",vref,v);
 	return vref;
 }

@@ -13,6 +13,7 @@
 
 
 int EncoderCounts(int channel) {
+	init_spi_master(spi_bps2304000);
 	if(channel == 0)
 	{
 		SS_EN0_LOW;
@@ -33,6 +34,7 @@ int EncoderCounts(int channel) {
 }
 
 void init_encoders() {
+	init_spi_master(spi_bps2304000);
 	DDRCbits._P4 = OUTPUT;
 	DDRCbits._P5 = OUTPUT;
 
@@ -62,6 +64,7 @@ void init_encoders() {
 }
 
 void write_encoder_reg(int channel, unsigned char op, unsigned char data_s) {
+	init_spi_master(spi_bps2304000);
 	if (channel == 0) {
 		SS_EN0_LOW
 		;
@@ -84,6 +87,7 @@ void write_encoder_reg(int channel, unsigned char op, unsigned char data_s) {
 
 void reset_encoder_count(int channel)
 {
+	init_spi_master(spi_bps2304000);
 	if(channel == 0)
 	{
 		SS_EN0_LOW;
