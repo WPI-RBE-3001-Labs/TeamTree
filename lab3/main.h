@@ -31,6 +31,7 @@
 #define SNAPSHOT 1
 #define MANUAL 2
 #define SAMPLESHIT 3
+#define INVERSEDEBUG 4
 
 void pid_persiodic_follow();
 void stop_motors();

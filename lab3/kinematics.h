@@ -12,3 +12,4 @@
 #define HIGHLINKLENGTH 112
 
 void calculate_forward_kinematics(float theta1, float theta2, float *x, float *y);
+void calculate_inverse_kinematics(float *theta1, float *theta2, float x, float y);

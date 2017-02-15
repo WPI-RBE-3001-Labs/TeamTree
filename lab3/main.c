@@ -11,6 +11,7 @@
 #include "accelerometer.h"
 #include "spi.h"
 #include "pid.h"
+#include "belt.h"
 #include "adc.h"
 #include "LS7366R.h"
 #include "Global.h"
@@ -42,7 +43,7 @@ bool snapmode = true;
 bool print_encoder = false;
 char prev_state = 0;
 
-int run_mode = SAMPLESHIT;
+int run_mode = INVERSEDEBUG;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -55,7 +56,10 @@ int main(int argv, char* argc[]) {
 	init_spi_master(spi_bps2304000);
 	init_pid();
 	init_encoders();
-	init_accelerometer();
+	//init_accelerometer();
+	init_belt();
+	float t1,t2;
+	calculate_inverse_kinematics(&t1,&t2,150,150);
 
 	DDRBbits._P0 = INPUT;
 	DDRBbits._P1 = INPUT;
@@ -131,7 +135,7 @@ int main(int argv, char* argc[]) {
 				//printf("%f\r\n",get_encoder_degrees(0));
 				encoder_time = currTime;
 				float gz = get_accelerometer_axis_g(2);
-				printf("%f\r\n",gz);
+				//printf("%f\r\n",gz);
 				//get_accelerometer_axis(1);
 				//get_accelerometer_vref();
 
@@ -139,6 +143,24 @@ int main(int argv, char* argc[]) {
 			break;
 		}
 
+
+		case INVERSEDEBUG:
+		{
+			if(!PINBbits._P0)
+			{
+
+			} else if(!PINBbits._P1 && (currTime - encoder_time > 1000))
+			{
+				float x,y;
+				calculate_forward_kinematics(get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),&x,&y);
+				printf("FORWARD\r\n");
+				printf("%f, %f, %f, %f\r\n",get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK),x,y);
+				float t1,t2;
+				calculate_inverse_kinematics(&t1,&t2,x,y);
+				encoder_time = currTime;
+			}
+			break;
+		}
 
 		case SAMPLESHIT:
 		{
