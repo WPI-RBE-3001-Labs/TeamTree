@@ -57,63 +57,157 @@ data2 = pandas.read_csv('./horizontal_to_vertical_2.csv')
 data3 = pandas.read_csv('./horizontal_to_vertical_3.csv')
 
 
-ax = plt.subplot(3, 3, 1)
-ax.set_aspect('equal', 'datalim')
-plt.subplot(3, 3, 1)
-plt.title('Pot Angles')
-ARM_L = 280
-xy1 = data1['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy2 = data2['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy3 = data3['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy2.plot(x='x', y='y', ax=ax)
-xy1.plot(x='x', y='y', ax=ax)
-xy3.plot(x='x', y='y', ax=ax)
-
-ax = plt.subplot(3, 3, 2)
-ax.set_aspect('equal', 'datalim')
-plt.title('Encoder Angles')
-xy1 = data1['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy2 = data2['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy3 = data3['encoder angle'].apply(lambda x: pandas.Series({'x': ARM_L*np.sin(radians(x)), 'y': ARM_L*np.cos(radians(x))}))
-xy2.plot(x='x', y='y', ax=ax)
-xy1.plot(x='x', y='y', ax=ax)
-xy3.plot(x='x', y='y', ax=ax)
-
-ax = plt.subplot(3, 3, 3)
-ax.set_aspect('equal', 'datalim')
-plt.title('Accelerometer Angles')
-
-def acc_to_xy(data):
-    thetas = []
-    current_theta = 0
-    current_w = 0
-    current_z = 0
-    current_x = 0
-    # mm/s^2
-    G = 9.8 * 1600
-    acc_z = G
-    acc_x = 0
-    dt = 0.01
+def enc_or_pot_to_xy(data, column_name):
     xs = []
     zs = []
-    for row in data.values:
-        g_z = np.cos(current_theta) * acc_z
-        g_x = np.sin(current_theta) * acc_z
-        acc_x = row[2] * G
-        acc_z = row[4] * G
+    thetas = []
+    ARM_L = 280
+    for i, row in enumerate(data.values):
+        angle = row[column_name]
+        x = ARM_L*np.sin(radians(angle))
+        z = ARM_L*np.cos(radians(angle))
+        xs.append(x)
+        zs.append(z)
+        theta = np.arctan2(x,z)
+        thetas.append(theta)
+    vthetas = np.diff(thetas, n=1)
+    athetas = np.diff(thetas, n=2)
 
-        current_z_dot = (acc_z - g_z) * dt
-        current_x_dot = (acc_x - g_x) * dt
+    return xs, zs, vthetas, athetas
+
+
+def acc_to_xy(data):
+    # mm/sec^2
+    G = 9800
+    # mm
+    ARM_L = 280
+    # sec
+    dt = 0.01
+    current_theta = 0
+    current_z = 0
+    current_x = ARM_L
+    current_z_dot = 0
+    current_x_dot = 0
+    xs = []
+    zs = []
+    vs = []
+    accs = []
+    thetas = [0]
+    for row in data.values:
+        g_z = np.cos(current_theta) * G
+        g_x = np.sin(current_theta) * G
+        acc_x = row[2] * G - g_x
+        acc_z = row[4] * G + g_z
+
+        current_z_dot = acc_z * dt
+        current_x_dot = acc_x * dt
         current_z += current_z_dot * dt + 1/2 * acc_z * dt * dt
         current_x += current_x_dot * dt + 1/2 * acc_x * dt * dt
         current_theta = np.arctan2(current_z, current_x)
-        thetas.append(current_theta)
         xs.append(-current_x)
         zs.append(current_z)
+        thetas.append(current_theta)
 
-    return xs, zs
+    vs = np.diff(thetas, n=1)
+    accs = np.diff(thetas, n=2)
+    return xs, zs, -vs + 0.012, accs
 
-plt.plot(*acc_to_xy(data1))
-plt.plot(*acc_to_xy(data2))
-plt.plot(*acc_to_xy(data3))
+pot_x1, pot_z1, pot_vel1, pot_acc1 = enc_or_pot_to_xy(data1, 0)
+pot_x2, pot_z2, pot_vel2, pot_acc2 = enc_or_pot_to_xy(data2, 0)
+pot_x3, pot_z3, pot_vel3, pot_acc3 = enc_or_pot_to_xy(data3, 0)
+
+
+plt.figure(4)
+plt.subplots_adjust(bottom=0.05, right=0.95, top=0.95, left=.05)
+ax = plt.subplot(3, 3, 1)
+ax.set_aspect('equal', 'datalim')
+plt.title('Pot Cartesian Positions')
+plt.plot(pot_x1, pot_z1, label='run 1')
+plt.plot(pot_x2, pot_z2, label='run 2')
+plt.plot(pot_x3, pot_z3, label='run 3')
+plt.legend()
+
+ax = plt.subplot(3, 3, 4)
+plt.title('Pot Joint Velocity')
+plt.plot(pot_vel1)
+plt.plot(pot_vel2)
+plt.plot(pot_vel3)
+
+ax = plt.subplot(3, 3, 7)
+plt.title('Pot Joint Acceleration')
+plt.plot(pot_acc1)
+plt.plot(pot_acc2)
+plt.plot(pot_acc3)
+
+enc_x1, enc_z1, enc_vel1, enc_acc1 = enc_or_pot_to_xy(data1, 1)
+enc_x2, enc_z2, enc_vel2, enc_acc2 = enc_or_pot_to_xy(data2, 1)
+enc_x3, enc_z3, enc_vel3, enc_acc3 = enc_or_pot_to_xy(data3, 1)
+
+ax = plt.subplot(3, 3, 2)
+ax.set_aspect('equal', 'datalim')
+plt.title('Encoder Cartesian Positions')
+plt.plot(enc_x1, enc_z1)
+plt.plot(enc_x2, enc_z2)
+plt.plot(enc_x3, enc_z3)
+
+ax = plt.subplot(3, 3, 5)
+plt.title('Encoder Joint Velocity')
+plt.plot(enc_vel1)
+plt.plot(enc_vel2)
+plt.plot(enc_vel3)
+
+ax = plt.subplot(3, 3, 8)
+plt.title('Encoder Joint Acceleration')
+plt.plot(enc_acc1)
+plt.plot(enc_acc2)
+plt.plot(enc_acc3)
+
+acc_x1, acc_z1, acc_vel1, acc_acc1 = acc_to_xy(data1)
+acc_x2, acc_z2, acc_vel2, acc_acc2 = acc_to_xy(data2)
+acc_x3, acc_z3, acc_vel3, acc_acc3 = acc_to_xy(data3)
+
+ax = plt.subplot(3, 3, 3)
+ax.set_aspect('equal', 'datalim')
+plt.title('Accelerometer Cartesian Positions')
+plt.plot(acc_x1, acc_z1)
+plt.plot(acc_x2, acc_z2)
+plt.plot(acc_x3, acc_z3)
+
+ax = plt.subplot(3, 3, 6)
+plt.title('Accelerometer Joint Velocity')
+plt.plot(acc_vel1)
+plt.plot(acc_vel2)
+plt.plot(acc_vel3)
+
+ax = plt.subplot(3, 3, 9)
+plt.title('Accelerometer Joint Acceleration')
+plt.plot(acc_acc1)
+plt.plot(acc_acc2)
+plt.plot(acc_acc3)
+plt.savefig('pos_vel_acc_all.png')
+
+
+
+
+plt.figure(5)
+plt.subplot(1, 3, 1)
+plt.title("Position from each sensor source")
+plt.plot(pot_x1, pot_z1)
+plt.plot(enc_x1, enc_z1)
+plt.plot(acc_x1, acc_z1)
+
+plt.subplot(1, 3, 2)
+plt.title("Velocity from each sensor source")
+plt.plot(pot_vel1)
+plt.plot(enc_vel1)
+plt.plot(acc_vel1)
+
+plt.subplot(1, 3, 3)
+plt.title("Acceleration from each sensor source")
+plt.plot(pot_acc1, label='pot')
+plt.plot(enc_acc1, label='encoder')
+plt.plot(acc_acc1, label='accelerometer')
+plt.legend()
+plt.savefig('pos_vel_acc_overlayed.png')
+
 plt.show()
