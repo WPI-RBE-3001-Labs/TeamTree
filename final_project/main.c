@@ -143,12 +143,17 @@ int main(int argv, char* argc[]) {
 				calculate_inverse_kinematics(&t1,&t2,240,TOOL_PICKUP_POS_Y);
 				base_setpoint = t1;
 				arm_setpoint = t2;
-			} else if(!PINBbits._P3)
+			} else if(!PINBbits._P2)
 			{
 				float t1,t2;
 				calculate_inverse_kinematics(&t1,&t2,TOOL_WAIT_POS_X,TOOL_WAIT_POS_Y);
 				base_setpoint = t1;
 				arm_setpoint = t2;
+			}
+			else if(!PINBbits._P3)
+			{
+				base_setpoint = 0;
+				arm_setpoint = 0;
 			}
 			switch(sub_state)
 			{
@@ -206,7 +211,33 @@ int main(int argv, char* argc[]) {
 						object_speed = (DIST_BETWEEN_IR)/((second_saw_time - saw_time)/1000.0); //cm/s
 						printf("Speed: %f  dt: %f\r\n",object_speed,(second_saw_time - saw_time)/1000.0);
 						sub_state = SUB_GRAB;
+						open_gripper();
 					}
+					break;
+				}
+
+				case SUB_GRAB:
+				{
+
+					float time_wait = DIST_IR_ARM/object_speed * 1000.0;
+					if(currTime - second_saw_time > time_wait)
+					{
+						float t1,t2;
+						calculate_inverse_kinematics(&t1,&t2,max_dist*10.0,TOOL_PICKUP_POS_Y);
+						base_setpoint = t1;
+						arm_setpoint = t2;
+						if(pid_done)
+						{
+							close_gripper();
+							sub_state = SUB_PICKUP;
+						}
+					}
+					break;
+				}
+
+				case SUB_PICKUP:
+				{
+
 					break;
 				}
 

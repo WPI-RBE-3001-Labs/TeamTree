@@ -20,7 +20,7 @@
 #define IR_TO_SIDEPLATE 20
 #define WIDTH_BLOCK 2.5
 
-#define FUDGE_FACTOR 1
+#define FUDGE_FACTOR 0
 
 
 #define DIST_BETWEEN_IR 3.5 //cm

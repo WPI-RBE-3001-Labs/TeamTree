@@ -1,5 +1,6 @@
 #include "ir_distance.h"
-
+#include <RBELib/RBELib.h>
+#include "main.h"
 #include "adc.h"
 #include "Global.h"
 
