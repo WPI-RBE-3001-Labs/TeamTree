@@ -8,8 +8,8 @@
 #pragma once
 
 #define BASELENGTH 143
-#define LOWLINKLENGTH 152
-#define HIGHLINKLENGTH 112
+#define LOW_LINK_LENGTH 152
+#define HIGH_LINK_LENGTH 112
 
 void calculate_forward_kinematics(float theta1, float theta2, float *x, float *y);
 void calculate_inverse_kinematics(float *theta1, float *theta2, float x, float y);
