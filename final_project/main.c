@@ -255,6 +255,7 @@ int main(int argv, char* argc[]) {
 
 				case SUB_PICKUP:
 				{
+					float t1,t2;
 					calculate_inverse_kinematics(&t1,&t2,TOOL_TEST_POS_X,TOOL_TEST_POS_Y);
 					base_setpoint = t1;
 					arm_setpoint = t2;
@@ -287,19 +288,61 @@ int main(int argv, char* argc[]) {
 					}
 					current = current*((currTime - current_sense_time_sum)*1.0);  //amps*sec -> C/s*s = C
 					current_sum += current;
-					if(get_arm_angle(HIGHLINK) > 32)
+					if(get_arm_angle(HIGHLINK) > 25)
 					{
 						unsigned long took = currTime - current_sense_time;
 						printf("Current %f %f %lu\r\n",current_sum,max_current,took);
-						sub_state = SUB_SORT;
 						pid_throttle_val = 1;
+						if(current_sum > HEAVY_OBJECT_THRES)
+						{
+							printf("HEAVY!\r\n");
+							sub_state = SUB_SORT_HEAVY;
+							float t1,t2;
+							calculate_inverse_kinematics(&t1,&t2,TOOL_HEAVY_POS_X,TOOL_HEAVY_POS_Y);
+							base_setpoint = t1;
+							arm_setpoint = t2;
+							pid_done = false;
+							pid_throttle_val = .25;
+						}
+						else
+						{
+							printf("LIGHT!\r\n");
+							sub_state = SUB_SORT_LIGHT;
+							float t1,t2;
+							calculate_inverse_kinematics(&t1,&t2,TOOL_LIGHT_POS_X,TOOL_LIGHT_POS_Y);
+							base_setpoint = t1;
+							arm_setpoint = t2;
+							pid_done = false;
+						}
 					}
 					current_sense_time_sum = currTime;
 					break;
 				}
 
-				case SUB_SORT:
+				case SUB_SORT_LIGHT:
 				{
+					if(pid_done)
+					{
+					sub_state = SUB_DROP;
+					}
+					break;
+				}
+
+
+
+				case SUB_SORT_HEAVY:
+				{
+					if(pid_done)
+					{
+					sub_state = SUB_DROP;
+					pid_throttle_val = 1;
+					}
+					break;
+				}
+
+				case SUB_DROP:
+				{
+					open_gripper();
 					printf("done\r\n");
 					saw_object = false;
 					max_dist = 0;

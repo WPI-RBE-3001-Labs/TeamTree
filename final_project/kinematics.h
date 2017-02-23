@@ -23,8 +23,14 @@
 #define TOOL_TEST_POS_X 220
 #define TOOL_TEST_POS_Y 150
 
-#define TOOL_READY_POS_Y 145
-#define TOOL_PICKUP_POS_Y 110
+#define TOOL_READY_POS_Y 155
+#define TOOL_PICKUP_POS_Y 115
+
+#define TOOL_LIGHT_POS_X -240
+#define TOOL_LIGHT_POS_Y 280
+
+#define TOOL_HEAVY_POS_X 300
+#define TOOL_HEAVY_POS_Y 140
 
 
 void calculate_forward_kinematics(float theta1, float theta2, float *x, float *y);

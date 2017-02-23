@@ -27,7 +27,9 @@
 #define HIGHLINK 1
 #define LOWLINKMG 0.15
 
-#define PID_TEST_THROTTLE .35
+#define PID_TEST_THROTTLE .30
+
+#define HEAVY_OBJECT_THRES 207 //mC or something like that lol
 
 
 #define SNAPSHOT 1
@@ -43,9 +45,11 @@
 #define SUB_GRAB 4
 #define SUB_PICKUP 5
 #define SUB_CURRENT 6
-#define SUB_SORT 7
+#define SUB_DROP 7
 #define SUB_GRIP 8
 #define SUB_PICKUP_CURRENT 9
+#define SUB_SORT_LIGHT 10
+#define SUB_SORT_HEAVY 11
 
 void pid_persiodic_follow();
 void stop_motors();
