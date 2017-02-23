@@ -51,7 +51,8 @@ int tool_x = 240;
 bool saw_object = false;
 float avg_dist,max_dist;
 int saw_times = 0;
-unsigned long saw_time,second_saw_time,sub_time = 0,grip_time,current_sense_time,current_sense_time_sum;
+unsigned long saw_time,second_saw_time,sub_time = 0,grip_time,current_sense_time,current_sense_time_sum,
+		throw_time;
 float object_speed;
 
 float current_sum = 0.0,max_current = 0;
@@ -135,6 +136,11 @@ int main(int argv, char* argc[]) {
 
 		case FINALPROJECT:
 		{
+			float x, y;
+			calculate_forward_kinematics(get_arm_angle(LOWLINK),
+					get_arm_angle(HIGHLINK), &x, &y);
+			printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
+					get_arm_angle(HIGHLINK));
 			if(!PINBbits._P0)
 			{
 				float t1,t2;
@@ -175,7 +181,7 @@ int main(int argv, char* argc[]) {
 						{
 							saw_object = true;
 							saw_time = currTime;
-							printf("1: %lu\r\n",saw_time);
+							//printf("1: %lu\r\n",saw_time);
 						}
 						saw_times++;
 					}
@@ -188,7 +194,7 @@ int main(int argv, char* argc[]) {
 					{
 						saw_object = false;
 						sub_state = SUB_READY;
-						printf("MAX: %f  %d\r\n",max_dist,saw_times);
+						//printf("MAX: %f  %d\r\n",max_dist,saw_times);
 					}
 					//printf("%f\r\n",reading);
 					break;
@@ -212,9 +218,9 @@ int main(int argv, char* argc[]) {
 					if(avg_dist > 17)
 					{
 						second_saw_time = currTime;
-						printf("2: %lu\r\n",second_saw_time);
+						//printf("2: %lu\r\n",second_saw_time);
 						object_speed = (DIST_BETWEEN_IR)/((second_saw_time - saw_time)/1000.0); //cm/s
-						printf("Speed: %f  dt: %f\r\n",object_speed,(second_saw_time - saw_time)/1000.0);
+						//printf("Speed: %f  dt: %f\r\n",object_speed,(second_saw_time - saw_time)/1000.0);
 						sub_state = SUB_GRAB;
 						open_gripper();
 					}
@@ -227,7 +233,7 @@ int main(int argv, char* argc[]) {
 					float time_wait = DIST_IR_ARM/object_speed * 1000.0;
 					if(currTime - second_saw_time > time_wait)
 					{
-						printf("PICK POS\r\n");
+						//printf("PICK POS\r\n");
 						float t1,t2;
 						calculate_inverse_kinematics(&t1,&t2,max_dist*10.0,TOOL_PICKUP_POS_Y);
 						base_setpoint = t1;
@@ -291,11 +297,11 @@ int main(int argv, char* argc[]) {
 					if(get_arm_angle(HIGHLINK) > 25)
 					{
 						unsigned long took = currTime - current_sense_time;
-						printf("Current %f %f %lu\r\n",current_sum,max_current,took);
+						//printf("Current %f %f %lu\r\n",current_sum,max_current,took);
 						pid_throttle_val = 1;
 						if(current_sum > HEAVY_OBJECT_THRES)
 						{
-							printf("HEAVY!\r\n");
+							//printf("HEAVY!\r\n");
 							sub_state = SUB_SORT_HEAVY;
 							float t1,t2;
 							calculate_inverse_kinematics(&t1,&t2,TOOL_HEAVY_POS_X,TOOL_HEAVY_POS_Y);
@@ -306,10 +312,10 @@ int main(int argv, char* argc[]) {
 						}
 						else
 						{
-							printf("LIGHT!\r\n");
+							//printf("LIGHT!\r\n");
 							sub_state = SUB_SORT_LIGHT;
 							float t1,t2;
-							calculate_inverse_kinematics(&t1,&t2,TOOL_LIGHT_POS_X,TOOL_LIGHT_POS_Y);
+							calculate_inverse_kinematics(&t1,&t2,TOOL_LIGHT_CHARGE_POS_X,TOOL_LIGHT_CHARGE_POS_Y);
 							base_setpoint = t1;
 							arm_setpoint = t2;
 							pid_done = false;
@@ -323,11 +329,29 @@ int main(int argv, char* argc[]) {
 				{
 					if(pid_done)
 					{
-					sub_state = SUB_DROP;
+						float t1,t2;
+						calculate_inverse_kinematics(&t1,&t2,TOOL_LIGHT_POS_X,TOOL_LIGHT_POS_Y);
+						base_setpoint = t1;
+						arm_setpoint = t2;
+						pid_done = false;
+						sub_state = SUB_THROW_LIGHT;
+						throw_time = currTime;
 					}
 					break;
 				}
 
+
+				case SUB_THROW_LIGHT:
+				{
+					if(currTime - throw_time > THROW_RELEASE_TIME)
+					{
+						open_gripper();
+						sub_state = SUB_DROP;
+						grip_time = currTime;
+					}
+
+					break;
+				}
 
 
 				case SUB_SORT_HEAVY:
@@ -336,6 +360,7 @@ int main(int argv, char* argc[]) {
 					{
 					sub_state = SUB_DROP;
 					pid_throttle_val = 1;
+					grip_time = currTime;
 					}
 					break;
 				}
@@ -343,14 +368,21 @@ int main(int argv, char* argc[]) {
 				case SUB_DROP:
 				{
 					open_gripper();
-					printf("done\r\n");
+					//printf("done\r\n");
 					saw_object = false;
 					max_dist = 0;
 					saw_times = 0;
 					avg_dist = 0;
-					sub_state = SUB_IDLE;
 					current_sum = 0;
 					max_current = 0;
+					if(pid_done && currTime - grip_time > 1000)
+					{
+						float t1,t2;
+						calculate_inverse_kinematics(&t1,&t2,TOOL_READY_POS_X,TOOL_READY_POS_Y);
+						base_setpoint = t1;
+						arm_setpoint = t2;
+						sub_state = SUB_IDLE;
+					}
 					break;
 				}
 
@@ -363,8 +395,8 @@ int main(int argv, char* argc[]) {
 
 		case INVERSEDEBUG:
 		{
-			base_setpoint = map_pot_angle(6, LOWLINK);
-			//arm_setpoint = map_pot_angle(7, HIGHLINK);
+			//base_setpoint = map_pot_angle(6, LOWLINK);
+			arm_setpoint = map_pot_angle(7, HIGHLINK);
 			if(!PINBbits._P0)
 			{
 				float low_angle = get_arm_angle(LOWLINK);

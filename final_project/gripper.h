@@ -10,7 +10,7 @@
 #define GRIPPERPORT 1
 
 #define GRIPPEROPEN 0
-#define GRIPPERCLOSE 300
+#define GRIPPERCLOSE 190
 
 
 void init_gripper();

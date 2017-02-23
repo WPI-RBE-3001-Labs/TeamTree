@@ -20,7 +20,7 @@
 #define IR_TO_SIDEPLATE 20
 #define WIDTH_BLOCK 2.5
 
-#define FUDGE_FACTOR 0
+#define FUDGE_FACTOR -.5  //neg brings the tool closer to the base
 
 
 #define DIST_BETWEEN_IR 3.5 //cm

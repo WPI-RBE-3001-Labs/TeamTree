@@ -37,16 +37,31 @@ void calculate_inverse_kinematics(float *theta1, float *theta2, float x, float y
 	*theta2 = -acos(((px2 + py2) - (a1_2 + a2_2))/(2.0*LOW_LINK_LENGTH*HIGH_LINK_LENGTH)) * 180.0/M_PI;
 //	*theta2 = ((px2 + py2) - (a1_2 + a2_2))/(2.0*LOW_LINK_LENGTH*HIGH_LINK_LENGTH);
 
-	printf("%f, %f, %f, %f\r\n",theta1_1,theta1_2,*theta2, -*theta2);
+	//printf("%f, %f, %f, %f\r\n",theta1_1,theta1_2,*theta2, -*theta2);
 
-	if(theta2 > 0)
+	if(x > 0)
 	{
-		*theta1 = theta1_1;
+		if(theta2 > 0)
+		{
+			*theta1 = theta1_1;
+		}
+		else
+		{
+			*theta1 = theta1_2;
+			*theta2 = -*theta2;
+		}
 	}
 	else
 	{
-		*theta1 = theta1_2;
-		*theta2 = -*theta2;
+		if(theta2 < 0)
+		{
+			*theta1 = theta1_1;
+		}
+		else
+		{
+			*theta1 = theta1_2;
+			*theta2 = -*theta2;
+		}
 	}
 }
 

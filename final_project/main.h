@@ -29,8 +29,7 @@
 
 #define PID_TEST_THROTTLE .30
 
-#define HEAVY_OBJECT_THRES 207 //mC or something like that lol
-
+#define HEAVY_OBJECT_THRES 205 //mC or something like that lol
 
 #define SNAPSHOT 1
 #define MANUAL 2
@@ -49,6 +48,7 @@
 #define SUB_GRIP 8
 #define SUB_PICKUP_CURRENT 9
 #define SUB_SORT_LIGHT 10
+#define SUB_THROW_LIGHT 12
 #define SUB_SORT_HEAVY 11
 
 void pid_persiodic_follow();

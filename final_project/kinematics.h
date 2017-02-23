@@ -14,7 +14,7 @@
 #define LOW_LINK_MAX_ANGLE 90
 #define LOW_LINK_MIN_ANGLE -108
 #define HIGH_LINK_MAX_ANGLE	82
-#define HIGH_LINK_MIN_ANGLE -102
+#define HIGH_LINK_MIN_ANGLE -105
 
 
 #define TOOL_WAIT_POS_X 200
@@ -23,14 +23,22 @@
 #define TOOL_TEST_POS_X 220
 #define TOOL_TEST_POS_Y 150
 
+#define TOOL_READY_POS_X 220
+
 #define TOOL_READY_POS_Y 155
 #define TOOL_PICKUP_POS_Y 115
+
+#define TOOL_LIGHT_CHARGE_POS_X 200
+#define TOOL_LIGHT_CHARGE_POS_Y 150
+
+#define THROW_RELEASE_TIME 250
+
 
 #define TOOL_LIGHT_POS_X -240
 #define TOOL_LIGHT_POS_Y 280
 
-#define TOOL_HEAVY_POS_X 300
-#define TOOL_HEAVY_POS_Y 140
+#define TOOL_HEAVY_POS_X 305
+#define TOOL_HEAVY_POS_Y 150
 
 
 void calculate_forward_kinematics(float theta1, float theta2, float *x, float *y);
