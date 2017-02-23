@@ -20,9 +20,11 @@
 #define TOOL_WAIT_POS_X 200
 #define TOOL_WAIT_POS_Y 360
 
+#define TOOL_TEST_POS_X 220
+#define TOOL_TEST_POS_Y 150
 
-#define TOOL_READY_POS_Y 155
-#define TOOL_PICKUP_POS_Y 120
+#define TOOL_READY_POS_Y 145
+#define TOOL_PICKUP_POS_Y 110
 
 
 void calculate_forward_kinematics(float theta1, float theta2, float *x, float *y);

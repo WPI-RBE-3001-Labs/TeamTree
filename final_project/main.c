@@ -51,8 +51,12 @@ int tool_x = 240;
 bool saw_object = false;
 float avg_dist,max_dist;
 int saw_times = 0;
-unsigned long saw_time,second_saw_time,sub_time = 0;
+unsigned long saw_time,second_saw_time,sub_time = 0,grip_time,current_sense_time,current_sense_time_sum;
 float object_speed;
+
+float current_sum = 0.0,max_current = 0;
+
+float pid_throttle_val = 1;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -152,8 +156,9 @@ int main(int argv, char* argc[]) {
 			}
 			else if(!PINBbits._P3)
 			{
-				base_setpoint = 0;
-				arm_setpoint = 0;
+				//base_setpoint = 0;
+				//arm_setpoint = 0;
+				open_gripper();
 			}
 			switch(sub_state)
 			{
@@ -222,13 +227,26 @@ int main(int argv, char* argc[]) {
 					float time_wait = DIST_IR_ARM/object_speed * 1000.0;
 					if(currTime - second_saw_time > time_wait)
 					{
+						printf("PICK POS\r\n");
 						float t1,t2;
 						calculate_inverse_kinematics(&t1,&t2,max_dist*10.0,TOOL_PICKUP_POS_Y);
 						base_setpoint = t1;
 						arm_setpoint = t2;
-						if(pid_done)
+						pid_done = false;
+						sub_state = SUB_GRIP;
+						grip_time = currTime;
+					}
+					break;
+				}
+
+				case SUB_GRIP:
+				{
+					if(pid_done)
+					{
+						//printf("Grab\r\n");
+						close_gripper();
+						if(currTime - grip_time > 1000)
 						{
-							close_gripper();
 							sub_state = SUB_PICKUP;
 						}
 					}
@@ -237,7 +255,59 @@ int main(int argv, char* argc[]) {
 
 				case SUB_PICKUP:
 				{
+					calculate_inverse_kinematics(&t1,&t2,TOOL_TEST_POS_X,TOOL_TEST_POS_Y);
+					base_setpoint = t1;
+					arm_setpoint = t2;
+					pid_done = false;
+					sub_state = SUB_PICKUP_CURRENT;
+					break;
+				}
 
+				case SUB_PICKUP_CURRENT:
+				{
+					if(pid_done) //done lifting the object off the belt slightly
+					{
+						sub_state = SUB_CURRENT;
+						arm_setpoint = 35;
+						pid_throttle_val = PID_TEST_THROTTLE;
+						pid_done = false;
+						current_sense_time = currTime;
+						current_sense_time_sum = currTime;
+					}
+					break;
+				}
+
+				case SUB_CURRENT:
+				{
+					float current = fabs(get_current(1));
+					//printf("%f\r\n",current);
+					if(current > max_current)
+					{
+						max_current = current;
+					}
+					current = current*((currTime - current_sense_time_sum)*1.0);  //amps*sec -> C/s*s = C
+					current_sum += current;
+					if(get_arm_angle(HIGHLINK) > 32)
+					{
+						unsigned long took = currTime - current_sense_time;
+						printf("Current %f %f %lu\r\n",current_sum,max_current,took);
+						sub_state = SUB_SORT;
+						pid_throttle_val = 1;
+					}
+					current_sense_time_sum = currTime;
+					break;
+				}
+
+				case SUB_SORT:
+				{
+					printf("done\r\n");
+					saw_object = false;
+					max_dist = 0;
+					saw_times = 0;
+					avg_dist = 0;
+					sub_state = SUB_IDLE;
+					current_sum = 0;
+					max_current = 0;
 					break;
 				}
 
@@ -251,7 +321,7 @@ int main(int argv, char* argc[]) {
 		case INVERSEDEBUG:
 		{
 			base_setpoint = map_pot_angle(6, LOWLINK);
-			arm_setpoint = map_pot_angle(7, HIGHLINK);
+			//arm_setpoint = map_pot_angle(7, HIGHLINK);
 			if(!PINBbits._P0)
 			{
 				float low_angle = get_arm_angle(LOWLINK);
@@ -408,12 +478,14 @@ void pid_periodic() {
 		limit_angles(&arm_setpoint,HIGHLINK);
 		float base_val = calculate_pid_output(get_arm_angle(LOWLINK),
 				base_setpoint, 0);
+		base_val = pid_limit(base_val, -pid_throttle_val, pid_throttle_val);
 		set_motor(0,
 				base_val
 						+ sin((M_PI * get_arm_angle(LOWLINK)) / 180.0)
 								* LOWLINKMG);
-		set_motor(1,
-				calculate_pid_output(get_arm_angle(HIGHLINK), arm_setpoint, 1));
+		float top_val = calculate_pid_output(get_arm_angle(HIGHLINK), arm_setpoint, 1);
+		top_val = pid_limit(top_val, -pid_throttle_val, pid_throttle_val);
+		set_motor(1,top_val);
 		pid_ready = false;
 		//printf("%f\r\n",get_arm_angle(HIGHLINK));
 		//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);

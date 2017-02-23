@@ -71,3 +71,18 @@ float get_pid_error(char link) {
 
 	return pid_stuff->error;
 }
+
+float pid_limit(float in, float min, float max)
+{
+	float out = in;
+	if(in > max)
+	{
+		out = max;
+	}
+
+	if(in < min)
+	{
+		out = min;
+	}
+	return out;
+}

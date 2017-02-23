@@ -15,8 +15,8 @@
 #define uart_bps230400 4
 #define uart_bps500000 4
 
-#define HORIZONTALPOTBASE 230
-#define VERTICALPOTBASE 593
+#define HORIZONTALPOTBASE 229
+#define VERTICALPOTBASE 588
 
 #define HORIZONTALPOTARM 179
 #define VERTICALPOTARM 579
@@ -26,6 +26,8 @@
 #define LOWLINK 0
 #define HIGHLINK 1
 #define LOWLINKMG 0.15
+
+#define PID_TEST_THROTTLE .35
 
 
 #define SNAPSHOT 1
@@ -40,6 +42,10 @@
 #define SUB_SAW 3
 #define SUB_GRAB 4
 #define SUB_PICKUP 5
+#define SUB_CURRENT 6
+#define SUB_SORT 7
+#define SUB_GRIP 8
+#define SUB_PICKUP_CURRENT 9
 
 void pid_persiodic_follow();
 void stop_motors();
