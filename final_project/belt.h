@@ -14,7 +14,7 @@
 #define BELTPORT 0
 
 
-#define DIST_IR_ARM 8.5 //cm
+#define DIST_IR_ARM 10.5 //cm
 
 void belt_backwards();
 void init_belt();

@@ -25,11 +25,12 @@
 
 #define LOWLINK 0
 #define HIGHLINK 1
-#define LOWLINKMG 0.15
+#define LOWLINKMG 0.13
 
-#define PID_TEST_THROTTLE .30
+#define PID_TEST_THROTTLE .25
 
-#define HEAVY_OBJECT_THRES 205 //mC or something like that lol
+#define HEAVY_OBJECT_THRES 400 //mC or something like that lol
+#define HEAVY_OBJECT_TIME_THRES 2000 //ms
 
 #define SNAPSHOT 1
 #define MANUAL 2

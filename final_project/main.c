@@ -139,8 +139,8 @@ int main(int argv, char* argc[]) {
 			float x, y;
 			calculate_forward_kinematics(get_arm_angle(LOWLINK),
 					get_arm_angle(HIGHLINK), &x, &y);
-			printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
-					get_arm_angle(HIGHLINK));
+			//printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
+					//get_arm_angle(HIGHLINK));
 			if(!PINBbits._P0)
 			{
 				float t1,t2;
@@ -297,9 +297,9 @@ int main(int argv, char* argc[]) {
 					if(get_arm_angle(HIGHLINK) > 25)
 					{
 						unsigned long took = currTime - current_sense_time;
-						//printf("Current %f %f %lu\r\n",current_sum,max_current,took);
+						printf("Current %f %f %lu\r\n",current_sum,max_current,took);
 						pid_throttle_val = 1;
-						if(current_sum > HEAVY_OBJECT_THRES)
+						if(current_sum > HEAVY_OBJECT_THRES || took > HEAVY_OBJECT_TIME_THRES)
 						{
 							//printf("HEAVY!\r\n");
 							sub_state = SUB_SORT_HEAVY;
@@ -566,7 +566,7 @@ void pid_periodic() {
 		//printf("pot: %d angle %f\r\n",adcReading_arm,angle_arm);
 		//printf("%f ,%f ,%f ,%f\r\n",base_setpoint,get_arm_angle(LOWLINK),base_val,current_base);
 		if (fabs(get_pid_error(LOWLINK)) < 4
-				&& fabs(get_pid_error(HIGHLINK) < 2)) {
+				&& fabs(get_pid_error(HIGHLINK) < 4)) {
 			if (currTime - pid_settle_time > 100) {
 				pid_done = true;
 			}
