@@ -29,7 +29,7 @@
 
 #define PID_TEST_THROTTLE .25
 
-#define HEAVY_OBJECT_THRES 400 //mC or something like that lol
+#define HEAVY_OBJECT_THRES 450 //mC or something like that lol
 #define HEAVY_OBJECT_TIME_THRES 2000 //ms
 
 #define SNAPSHOT 1

@@ -52,12 +52,16 @@ bool saw_object = false;
 float avg_dist,max_dist;
 int saw_times = 0;
 unsigned long saw_time,second_saw_time,sub_time = 0,grip_time,current_sense_time,current_sense_time_sum,
-		throw_time;
+		throw_time,stream_time;
 float object_speed;
 
 float current_sum = 0.0,max_current = 0;
 
 float pid_throttle_val = 1;
+
+volatile BYTE rx_buff[4];
+volatile int rx_buff_cursor = 0;
+volatile bool rx_buff_full = false;
 
 int main(int argv, char* argc[]) {
 	initRBELib();
@@ -84,7 +88,8 @@ int main(int argv, char* argc[]) {
 	DDRBbits._P3 = INPUT;
 	DDRDbits._P0 = INPUT;
 	DDRDbits._P5 = OUTPUT;
-	PORTDbits._P5 = 1;
+	DDRDbits._P6 = INPUT;
+	PORTDbits._P5 = 0;
 
 	if (!snapmode) {
 		snapshot_counter = 16;
@@ -97,7 +102,7 @@ int main(int argv, char* argc[]) {
 	//printf("X,Y,Theta1,Theta2\r\n");
 	EncoderCounts(0);
 	while (1) {
-		if(PINDbits._P0)
+		if(PINDbits._P6)
 		{
 			run_mode = INVERSEDEBUG;
 		}
@@ -139,14 +144,19 @@ int main(int argv, char* argc[]) {
 			float x, y;
 			calculate_forward_kinematics(get_arm_angle(LOWLINK),
 					get_arm_angle(HIGHLINK), &x, &y);
-			//printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
-					//get_arm_angle(HIGHLINK));
+			if(currTime - stream_time >= 50)
+			{
+				printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
+						get_arm_angle(HIGHLINK));
+				stream_time = currTime;
+			}
 			if(!PINBbits._P0)
 			{
 				float t1,t2;
 				calculate_inverse_kinematics(&t1,&t2,240,TOOL_READY_POS_Y);
 				base_setpoint = t1;
 				arm_setpoint = t2;
+				printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),get_arm_angle(HIGHLINK));
 			} else if(!PINBbits._P1)
 			{
 				float t1,t2;
@@ -297,7 +307,7 @@ int main(int argv, char* argc[]) {
 					if(get_arm_angle(HIGHLINK) > 25)
 					{
 						unsigned long took = currTime - current_sense_time;
-						printf("Current %f %f %lu\r\n",current_sum,max_current,took);
+						//printf("Current %f %f %lu\r\n",current_sum,max_current,took);
 						pid_throttle_val = 1;
 						if(current_sum > HEAVY_OBJECT_THRES || took > HEAVY_OBJECT_TIME_THRES)
 						{
@@ -395,8 +405,27 @@ int main(int argv, char* argc[]) {
 
 		case INVERSEDEBUG:
 		{
-			//base_setpoint = map_pot_angle(6, LOWLINK);
-			arm_setpoint = map_pot_angle(7, HIGHLINK);
+			if(currTime - stream_time >= 30)
+			{
+				float x, y;
+				calculate_forward_kinematics(get_arm_angle(LOWLINK),
+						get_arm_angle(HIGHLINK), &x, &y);
+				printf("%f, %f, %f, %f\r\n", x, y, get_arm_angle(LOWLINK),
+						get_arm_angle(HIGHLINK));
+				stream_time = currTime;
+			}
+			if(rx_buff_full)
+			{
+				rx_buff_cursor = 0;
+				int desired_x = ((rx_buff[0] << 8) | rx_buff[1])- 500;
+				int desired_y = ((rx_buff[2] << 8) | rx_buff[3])  -500;
+				float t1,t2;
+				calculate_inverse_kinematics(&t1,&t2,desired_x,desired_y);
+				base_setpoint = t1;
+				arm_setpoint = t2;
+				rx_buff_full = false;
+				PORTDbits._P5 ^= 1;
+			}
 			if(!PINBbits._P0)
 			{
 				float low_angle = get_arm_angle(LOWLINK);
@@ -692,9 +721,24 @@ void init_led() {
 void init_serial(unsigned int baudrate_coded) {
 	UBRR0H = (unsigned char) (baudrate_coded >> 8);
 	UBRR0L = (unsigned char) baudrate_coded;
-	UCSR0B = (1 << RXEN0) | (1 << TXEN0);
+	UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1<<RXCIE0);
 	UCSR0C = (3 << UCSZ00);
+
 //UCSR0A = (1 << U2X0);
+}
+
+ISR( USART0_RX_vect )
+{
+	if(!rx_buff_full)
+	{
+		rx_buff[rx_buff_cursor] = UDR0;
+		rx_buff_cursor++;
+		if(rx_buff_cursor > 3)
+		{
+			rx_buff_full = true;
+			PORTDbits._P5 ^= 1;
+		}
+	}
 }
 
 void transmit(char *data, unsigned int datalen) {
